@@ -1,0 +1,64 @@
+:root {
+    --bg-body: #f3f4f6;
+    --bg-card: #ffffff;
+    --bg-sidebar: #1f2937;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-white: #ffffff;
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --border-color: #e5e7eb;
+    --success-color: #10b981;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-primary); height: 100vh; overflow: hidden; }
+
+.app-container { display: flex; height: 100%; }
+
+/* Sidebar */
+.sidebar { width: 260px; background: var(--bg-sidebar); color: var(--text-white); padding: 20px; display: flex; flex-direction: column; }
+.logo { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+.logo i { font-size: 24px; color: var(--success-color); }
+
+.nav-menu { display: flex; flex-direction: column; gap: 10px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; color: #9ca3af; text-decoration: none; border-radius: 8px; transition: 0.2s; }
+.nav-item:hover, .nav-item.active { background: #374151; color: #fff; }
+.nav-item i { font-size: 18px; }
+
+/* Main Content */
+.main-content { flex: 1; padding: 30px; overflow-y: auto; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.section-header h1 { font-size: 24px; font-weight: 600; }
+
+/* Cards & Forms */
+.card { background: var(--bg-card); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-color); }
+.card-header { font-weight: 600; font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
+.form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+.form-group textarea { resize: vertical; min-height: 100px; }
+.form-group small { display: block; margin-top: 4px; font-size: 12px; color: var(--text-secondary); }
+
+.btn { padding: 10px 20px; border-radius: 6px; font-weight: 500; cursor: pointer; border: none; font-size: 14px; transition: 0.2s; }
+.btn-primary { background: var(--primary-color); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.divider { display: flex; align-items: center; justify-content: center; margin: 16px 0; color: var(--text-secondary); font-size: 12px; font-weight: 500; text-transform: uppercase; }
+.text-muted { color: var(--text-secondary); font-size: 14px; }
+.mt-2 { margin-top: 8px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+.badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.badge.success { background: #d1fae5; color: #065f46; }
+
+/* Chat Simulator */
+.chat-container { display: flex; flex-direction: column; height: 600px; background: #fff; border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
+.chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f9fafb; display: flex; flex-direction: column; gap: 12px; }
+.message { max-width: 70%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+.message.user { align-self: flex-end; background: var(--primary-color); color: #fff; border-bottom-right-radius: 2px; }
+.message.assistant { align-self: flex-start; background: #e5e7eb; color: var(--text-primary); border-bottom-left-radius: 2px; }
+
+.chat-input-area { padding: 16px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
+.chat-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; }

@@ -1,0 +1,2854 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-28T06:52:16.159096+00:00",
+  "sourceCommit": "0a279446f2e9bc86582dd5cb024da2b7ef7a4bb9",
+  "sourceBranch": "coneldiablo/instagram-memory-campaign-fix-20261024",
+  "purpose": "Read-only source snapshot of running services; no deployment or functional acceptance implied.",
+  "services": {
+    "crm": {
+      "image": "sha256:873542781298f549dd27b55a5bc9828e210c0bcf17cb47562dce15b51ba6d59e",
+      "running": true,
+      "restarts": 0,
+      "health": "healthy",
+      "workdir": "/app",
+      "files": {
+        "package-lock.json": {
+          "sha256": "443395b6abc4c516a425a7fa5547590a35877cb78a7638bc7427890781df607f",
+          "source": "deploy/production-snapshot-20261028/overlays/crm/package-lock.json"
+        },
+        "package.json": {
+          "sha256": "5b9bbd85d3b05be2e1b2b233ef072f2459183c42b9075c2c39ab5edde782eb4b",
+          "source": "deploy/production-snapshot-20261028/overlays/crm/package.json"
+        },
+        "src/app.js": {
+          "sha256": "80c6cbc52cdd098fe8e65404587af134f5212d948dfa075df54e74120c253521",
+          "source": "whatsapp_crm/src/app.js"
+        },
+        "src/config/index.js": {
+          "sha256": "838e4d6bbdc4f1634bb820024d39996a21caf8fa660411d9769534341638d077",
+          "source": "whatsapp_crm/src/config/index.js"
+        },
+        "src/queues/document-queue.js": {
+          "sha256": "140ac2181cc23768d777346398a14f20df7c6a5744149fec87811700bd2ad80c",
+          "source": "whatsapp_crm/src/queues/document-queue.js"
+        },
+        "src/queues/workers/document-worker.js": {
+          "sha256": "708cbdaac5e0b71fa0013d2e556f9ee0ca933b4ef176055f09dff1d9f84524db",
+          "source": "whatsapp_crm/src/queues/workers/document-worker.js"
+        },
+        "src/routes/api.routes.js": {
+          "sha256": "ac5b1ab1b3abfc6757d7f65a6d8294ca5970290b8b1067a97a88daadf9167c23",
+          "source": "whatsapp_crm/src/routes/api.routes.js"
+        },
+        "src/routes/ava-analytics.routes.js": {
+          "sha256": "91e9466ba906f460b8e11d1cde8df63e6fb6bbf938efa476679d7075acc032de",
+          "source": "whatsapp_crm/src/routes/ava-analytics.routes.js"
+        },
+        "src/routes/ava-attention.routes.js": {
+          "sha256": "a3a9bac93f832300203ed76cd02bf58581e98d61589ef84f287fd9f0b5cab0db",
+          "source": "whatsapp_crm/src/routes/ava-attention.routes.js"
+        },
+        "src/routes/ava-autopilot.routes.js": {
+          "sha256": "e88d90e8c8e2a0b03264f7dd8cd3fa2010274ad00854856370b0d3111a6fe6ee",
+          "source": "whatsapp_crm/src/routes/ava-autopilot.routes.js"
+        },
+        "src/routes/ava-availability.routes.js": {
+          "sha256": "b57b56b69f24cc70ae4e56a499009b603687de6b26f622dac2eb415d9d7c2933",
+          "source": "whatsapp_crm/src/routes/ava-availability.routes.js"
+        },
+        "src/routes/ava-collaboration.routes.js": {
+          "sha256": "982b0d8de17c651a08716910fca746a10488745daa8d9e378e0b9b6716305b1a",
+          "source": "whatsapp_crm/src/routes/ava-collaboration.routes.js"
+        },
+        "src/routes/ava-copilot.routes.js": {
+          "sha256": "fef409ebff29d7c432e7b11cfbcf2b12433e6db1169d20dfcace97182a991eeb",
+          "source": "whatsapp_crm/src/routes/ava-copilot.routes.js"
+        },
+        "src/routes/ava-improvements-flags.routes.js": {
+          "sha256": "45413971948463f2556b79d2434802e1b38346b5e7defd416b69864d2ae14597",
+          "source": "whatsapp_crm/src/routes/ava-improvements-flags.routes.js"
+        },
+        "src/routes/ava-knowledge-review.routes.js": {
+          "sha256": "386b26ed64f9dbc506dc48dc98ce6e6ba9757cbd3e0258398d5389e5d967a323",
+          "source": "whatsapp_crm/src/routes/ava-knowledge-review.routes.js"
+        },
+        "src/routes/ava-release-flags.routes.js": {
+          "sha256": "254ac40b4ef204465f6c7691db07673ca3cdeb88def71ed22b6a2b055c9812eb",
+          "source": "whatsapp_crm/src/routes/ava-release-flags.routes.js"
+        },
+        "src/routes/ava-workspace.routes.js": {
+          "sha256": "a5dc64558a3d9772235713fb552fd633d0a24ec1d2666c9d308fe22322f1f7d9",
+          "source": "whatsapp_crm/src/routes/ava-workspace.routes.js"
+        },
+        "src/routes/client-identity.routes.js": {
+          "sha256": "8b6a9022a3f4a21611a78fabc0f1c147b5f5b401cf7a173c5be06669eca1c87e",
+          "source": "whatsapp_crm/src/routes/client-identity.routes.js"
+        },
+        "src/routes/customer-activity.routes.js": {
+          "sha256": "a86ce9eb76f1225699b77602e2ed918c052b8623188b7c34b6d3a8694950be56",
+          "source": "whatsapp_crm/src/routes/customer-activity.routes.js"
+        },
+        "src/routes/customer-business-gpt.routes.js": {
+          "sha256": "35345a1ab664158e3894cb2ea4402ee5791bc2b391c6209703379fdc4972dbd7",
+          "source": "whatsapp_crm/src/routes/customer-business-gpt.routes.js"
+        },
+        "src/routes/customer-calls.routes.js": {
+          "sha256": "e013bed81bbf6374ac6fe72ec422cb3a26717e88d9c70910cdd594560fa6da56",
+          "source": "whatsapp_crm/src/routes/customer-calls.routes.js"
+        },
+        "src/routes/customer-catalog.routes.js": {
+          "sha256": "d6de5254574f1c6703046a7195a2fb8dfef8658ccd76f17fe80fe48e292422db",
+          "source": "whatsapp_crm/src/routes/customer-catalog.routes.js"
+        },
+        "src/routes/customer-commercial-documents.routes.js": {
+          "sha256": "2122706371a4a899d3ea7bf5acf671480889fbaae2920afa895d66274a762928",
+          "source": "whatsapp_crm/src/routes/customer-commercial-documents.routes.js"
+        },
+        "src/routes/customer-deals.routes.js": {
+          "sha256": "7039078db3f6cd3e34db65b8be719135198c34288eab7e74578ae45c9e6a72f5",
+          "source": "whatsapp_crm/src/routes/customer-deals.routes.js"
+        },
+        "src/routes/customer-external-integrations.routes.js": {
+          "sha256": "8eda9640a2e8fe14f9ae00153d794940dfae43faec325d5e3370c5d401a8fc12",
+          "source": "whatsapp_crm/src/routes/customer-external-integrations.routes.js"
+        },
+        "src/routes/customer-intelligence.routes.js": {
+          "sha256": "e7b652f3824b744a2c4c6b665a451bffe3617278b6013bc5100fd9871180f65a",
+          "source": "whatsapp_crm/src/routes/customer-intelligence.routes.js"
+        },
+        "src/routes/customer-knowledge-preview.routes.js": {
+          "sha256": "b4964d843308e7f3d8bbd753ee12c185588547832602b5afd36649f7b11153c7",
+          "source": "whatsapp_crm/src/routes/customer-knowledge-preview.routes.js"
+        },
+        "src/routes/customer-native-crm.routes.js": {
+          "sha256": "8c6f1c7e812c3bd1cac0b9dd8f2d4a0f02505ec8bb2253710b44e4f3d1a6094d",
+          "source": "whatsapp_crm/src/routes/customer-native-crm.routes.js"
+        },
+        "src/routes/customer-outbound-attempts.routes.js": {
+          "sha256": "d03ec01af81742c9847658cc99b1572e444476a5bbcc05f2bf42ad8a2860f59e",
+          "source": "whatsapp_crm/src/routes/customer-outbound-attempts.routes.js"
+        },
+        "src/routes/customer-pms.routes.js": {
+          "sha256": "0b9e832e44403d21fa24e300548d14a4257ae8c90d17a59d0892093ea1db36af",
+          "source": "whatsapp_crm/src/routes/customer-pms.routes.js"
+        },
+        "src/routes/customer-studio.routes.js": {
+          "sha256": "f3a05d631b62a2fce8d31d5c1298f975ac6cffd5b1c63b88282de46506b67b3d",
+          "source": "whatsapp_crm/src/routes/customer-studio.routes.js"
+        },
+        "src/routes/customer-team.routes.js": {
+          "sha256": "f8f6624bc41207c9fc7902ef2b737c9a770245942fd3cf82bac6d26d137d17ff",
+          "source": "whatsapp_crm/src/routes/customer-team.routes.js"
+        },
+        "src/routes/customer-trigger-preview.routes.js": {
+          "sha256": "dff97baad012be1fe32b80500ffdcb513215f970ff68846f6e303e2dcf2e389a",
+          "source": "whatsapp_crm/src/routes/customer-trigger-preview.routes.js"
+        },
+        "src/routes/dashboard-ai.routes.js": {
+          "sha256": "782b171606ad7df4c5152e7f704308056224cc4455271f8a7c93acf1d40568a1",
+          "source": "whatsapp_crm/src/routes/dashboard-ai.routes.js"
+        },
+        "src/routes/dashboard-intelligence.routes.js": {
+          "sha256": "ec733ce5c8605f740cd7d77ea57beb2e4efaa46975814033c9299e3b197939d7",
+          "source": "whatsapp_crm/src/routes/dashboard-intelligence.routes.js"
+        },
+        "src/routes/dashboard-metrics.routes.js": {
+          "sha256": "1d20f8ba14c5dc51759d6c65c1e15f8c2bb1e060f300f057ac38351cf15ca64d",
+          "source": "whatsapp_crm/src/routes/dashboard-metrics.routes.js"
+        },
+        "src/routes/identity.routes.js": {
+          "sha256": "7140162fc6051f93ff31def9b88f9f7ff055fd978c88804f85918ec35c3d5d5b",
+          "source": "whatsapp_crm/src/routes/identity.routes.js"
+        },
+        "src/routes/instagram.routes.js": {
+          "sha256": "d3f757bcacb96aae1fcfe4ec0f70e03f326aa92d649f9bf3236ac5101e8165e8",
+          "source": "whatsapp_crm/src/routes/instagram.routes.js"
+        },
+        "src/routes/ml.routes.js": {
+          "sha256": "3a77ad53fe254afc49b0932e99e7a68c9970cb478e0253b00004871c008ed6c3",
+          "source": "whatsapp_crm/src/routes/ml.routes.js"
+        },
+        "src/routes/module-access.routes.js": {
+          "sha256": "65f9f68e09bd4a3ec1779d0b662201b5af1c98766d5572aa84a33a216e32a7b5",
+          "source": "whatsapp_crm/src/routes/module-access.routes.js"
+        },
+        "src/routes/onboarding-state.routes.js": {
+          "sha256": "b88539d1ee266250989a806bb0ed0deb5690114c92acc40bab6dd497f3ee0f1c",
+          "source": "whatsapp_crm/src/routes/onboarding-state.routes.js"
+        },
+        "src/routes/onyx-llm.routes.js": {
+          "sha256": "43be220db7cfb8c504c79559d4b134011df49b448580bbf3a89a82d659d9e0fb",
+          "source": "whatsapp_crm/src/routes/onyx-llm.routes.js"
+        },
+        "src/routes/pms-public.routes.js": {
+          "sha256": "f90f08f8fdb0fa001d2d55de90e83a51e22ac3d06736e5ef1ea26ba25c396c42",
+          "source": "whatsapp_crm/src/routes/pms-public.routes.js"
+        },
+        "src/routes/sales-workspace.routes.js": {
+          "sha256": "20829644be88786166c955b490262e6fbbd66a4521fb61028b4db31646f839a6",
+          "source": "whatsapp_crm/src/routes/sales-workspace.routes.js"
+        },
+        "src/routes/telephony-campaigns.routes.js": {
+          "sha256": "2d13b4d1a73e41d6dc80acdf3ca239e71f90c6cb1376405641df8b9bbc457db1",
+          "source": "whatsapp_crm/src/routes/telephony-campaigns.routes.js"
+        },
+        "src/routes/telephony-internal.routes.js": {
+          "sha256": "6fd251a7d7f33b4b5aef4041f8bb27ba5805f3bc36eb5c0031919b98dc44fbca",
+          "source": "whatsapp_crm/src/routes/telephony-internal.routes.js"
+        },
+        "src/routes/telephony.routes.js": {
+          "sha256": "41f1ef7d6ebe48a8cd155a16397af158fffccb5826b29eff6d52b23967e953a3",
+          "source": "whatsapp_crm/src/routes/telephony.routes.js"
+        },
+        "src/routes/twenty-public.routes.js": {
+          "sha256": "c415ef5aab84b73d02ed881f244b85bf5dce35fb34af76a2afca720efdb3a9ca",
+          "source": "whatsapp_crm/src/routes/twenty-public.routes.js"
+        },
+        "src/routes/voice-settings.routes.js": {
+          "sha256": "eda05fa62d41ac28de396a4463e5332ce5ad769dfda3841b4a39c238d80f0500",
+          "source": "whatsapp_crm/src/routes/voice-settings.routes.js"
+        },
+        "src/routes/whatsapp-response-settings.routes.js": {
+          "sha256": "f1323b93eb78baaf65dcb64f0300309665adf86c2391916d68869ee96ab35917",
+          "source": "whatsapp_crm/src/routes/whatsapp-response-settings.routes.js"
+        },
+        "src/services/ai-request.service.js": {
+          "sha256": "85df7225108fca4dc7441497c08024e4635cda109f029eba2675feda1ba5f44a",
+          "source": "whatsapp_crm/src/services/ai-request.service.js"
+        },
+        "src/services/ai.service.js": {
+          "sha256": "36fb917716cd8cfd2bcf6abcd530cccf9aecf1043b7e59575ca52acee5ab2d31",
+          "source": "whatsapp_crm/src/services/ai.service.js"
+        },
+        "src/services/assistant-draft.service.js": {
+          "sha256": "cb60bc850bd120ca2de5345e8b954a6f3160cc3d59506b741ab8caad6b9cf471",
+          "source": "whatsapp_crm/src/services/assistant-draft.service.js"
+        },
+        "src/services/assistant-public-pages.service.js": {
+          "sha256": "95aec539cbbec487edfd459ba61dcfa98846296133445b17ab7b0ff5f0a55eb6",
+          "source": "whatsapp_crm/src/services/assistant-public-pages.service.js"
+        },
+        "src/services/auth.service.js": {
+          "sha256": "b2a532b1d579a1406455756f80dbf41dfc5d2aab72b9a0010165da2604a521ff",
+          "source": "whatsapp_crm/src/services/auth.service.js"
+        },
+        "src/services/ava-analytics.service.js": {
+          "sha256": "0e3eef9f32e600e53006c2cf6c54dc3b8b24ccb3dc1bd5d34a2909d513eb3f70",
+          "source": "whatsapp_crm/src/services/ava-analytics.service.js"
+        },
+        "src/services/ava-attention.service.js": {
+          "sha256": "f8e353ee1a0557edc3f286f54c9b7ebd31037078007f2ad01e46c6c22881fed5",
+          "source": "whatsapp_crm/src/services/ava-attention.service.js"
+        },
+        "src/services/ava-autopilot.service.js": {
+          "sha256": "e0b04615616ba6cb94b6a17787b9b33a0f7f64873db67b145b0494d97b224ef6",
+          "source": "whatsapp_crm/src/services/ava-autopilot.service.js"
+        },
+        "src/services/ava-autopilot.store.js": {
+          "sha256": "49a687aba659a29be426decef2de1d4545859be7b82caa110e911c1d29702fb0",
+          "source": "whatsapp_crm/src/services/ava-autopilot.store.js"
+        },
+        "src/services/ava-availability.service.js": {
+          "sha256": "0c26649270aededa13085480ef6230005f7412144fe61f1e5b40f4281a13402a",
+          "source": "whatsapp_crm/src/services/ava-availability.service.js"
+        },
+        "src/services/ava-collaboration.service.js": {
+          "sha256": "bb2493725faad736fa88759252379f4ffb9f65d3bd1f5acee4df87f041799423",
+          "source": "whatsapp_crm/src/services/ava-collaboration.service.js"
+        },
+        "src/services/ava-copilot.service.js": {
+          "sha256": "c991b6888576867163bcf6a9d262c85fc0ee5c052c6b5188998d48045dff3698",
+          "source": "whatsapp_crm/src/services/ava-copilot.service.js"
+        },
+        "src/services/ava-improvements-flags.service.js": {
+          "sha256": "fb60945e7cf3656db6054265212ca4d36e1e017d5d671e09cbaf0b5a83da7925",
+          "source": "whatsapp_crm/src/services/ava-improvements-flags.service.js"
+        },
+        "src/services/ava-knowledge-review.service.js": {
+          "sha256": "015f5155633732fb8d1df258d069030aa5cdb2977281768c85ef1b5486cda76e",
+          "source": "whatsapp_crm/src/services/ava-knowledge-review.service.js"
+        },
+        "src/services/ava-outbound.service.js": {
+          "sha256": "3e252e09146e9962ea30c4341fe1c63248c701d5cd95e14282f37f5e223f2af1",
+          "source": "whatsapp_crm/src/services/ava-outbound.service.js"
+        },
+        "src/services/ava-release-flags.service.js": {
+          "sha256": "55bb7d9bd4bc56558eca71d7c53ad452f035e66b744795dfba0481efdb9b3186",
+          "source": "whatsapp_crm/src/services/ava-release-flags.service.js"
+        },
+        "src/services/ava-send-recovery.service.js": {
+          "sha256": "5989f75e0c8c897a86dfb785e56de54067d9e47b0b985a9b8f888236a3805e72",
+          "source": "whatsapp_crm/src/services/ava-send-recovery.service.js"
+        },
+        "src/services/ava-workspace.service.js": {
+          "sha256": "d4bcd33d5815b659cdd9cb6bf9932e67954b716dbea2d482ab6f2f69d4aed18c",
+          "source": "whatsapp_crm/src/services/ava-workspace.service.js"
+        },
+        "src/services/ava-workspace.store.js": {
+          "sha256": "de2276737a901adb637b8137c6e4c78c71b475460d9dc47775d294567a275d09",
+          "source": "whatsapp_crm/src/services/ava-workspace.store.js"
+        },
+        "src/services/avito.service.js": {
+          "sha256": "b59e4ad5b5bda036369371558ed7b804101870c6ed8f71ab2c861d94daf650be",
+          "source": "whatsapp_crm/src/services/avito.service.js"
+        },
+        "src/services/barista-bot.service.js": {
+          "sha256": "0805fd8cfd40a58ca436b42c4976293c32e0ec580259f1c8f233107a709ec04c",
+          "source": "whatsapp_crm/src/services/barista-bot.service.js"
+        },
+        "src/services/cache.service.js": {
+          "sha256": "8a9ba97c20f20fd89f47f67957f23bb846895e188cfc7d36d388773a7d6bca0c",
+          "source": "whatsapp_crm/src/services/cache.service.js"
+        },
+        "src/services/catalog-import.service.js": {
+          "sha256": "fef14e1e3ebc7ba03b72e4a6b720162a99655abe81f789fc5a850d28488bfa80",
+          "source": "whatsapp_crm/src/services/catalog-import.service.js"
+        },
+        "src/services/catalog.store.js": {
+          "sha256": "127bd2c6918dc4295a1afd0d09b5f9f8b39fa3832be0b06e76b5fdf9eb86e734",
+          "source": "whatsapp_crm/src/services/catalog.store.js"
+        },
+        "src/services/channel-context.service.js": {
+          "sha256": "a7abf1e9f59c20b70631c65afdd616af8e70595716afdacc2e918e7ee5254e65",
+          "source": "whatsapp_crm/src/services/channel-context.service.js"
+        },
+        "src/services/channel-credentials.js": {
+          "sha256": "e41fd48ad745c862ae8676fc9fd92abb615ee3cf38038914abe2d3e7af4e1f57",
+          "source": "whatsapp_crm/src/services/channel-credentials.js"
+        },
+        "src/services/channel-customer-context.service.js": {
+          "sha256": "9d01f946552d507e194d780d45465dd6d7acd560907c33768d65c43bc70e045b",
+          "source": "whatsapp_crm/src/services/channel-customer-context.service.js"
+        },
+        "src/services/channel-jobs.store.js": {
+          "sha256": "a58f7f0cc4819fadaaa68be47c881a70b08ed8165dc8e3a22faaf92d75d8fe5c",
+          "source": "whatsapp_crm/src/services/channel-jobs.store.js"
+        },
+        "src/services/channel-product-context.service.js": {
+          "sha256": "96cd24624d627b488cf6f8665a1d6dbca03d104783fbf72cb5b0a8e471ac2e61",
+          "source": "whatsapp_crm/src/services/channel-product-context.service.js"
+        },
+        "src/services/channel-router.service.js": {
+          "sha256": "ef523cb3fae3f58d049f36c6ded74a36eeb3d3a77ea715b02934f9c9ebfd45a9",
+          "source": "whatsapp_crm/src/services/channel-router.service.js"
+        },
+        "src/services/client-call-history.service.js": {
+          "sha256": "faa3ac46631d628fbedf549492856e862f21c28c641465db129c38bd89998f17",
+          "source": "whatsapp_crm/src/services/client-call-history.service.js"
+        },
+        "src/services/client-identity.service.js": {
+          "sha256": "6e8dd91074f1f14e4d66855bbbc88917530ebe9506a6737c52b1ba3c8873c69d",
+          "source": "whatsapp_crm/src/services/client-identity.service.js"
+        },
+        "src/services/coffee-feedback.service.js": {
+          "sha256": "58ccf7d98dde28d2033b58af8552cf95c8ec5c66b250c710c90abfbb1b2e3fe4",
+          "source": "whatsapp_crm/src/services/coffee-feedback.service.js"
+        },
+        "src/services/commercial-documents.service.js": {
+          "sha256": "7a988c8f2cc5a281a599b32ab61d72688e42101368444f470fe28d8412d8866e",
+          "source": "whatsapp_crm/src/services/commercial-documents.service.js"
+        },
+        "src/services/crm-memory-policy.json": {
+          "sha256": "1483b29cabb212a4756ea54e51208f89f30d1aa1b306b48cdf3d975db674f23a",
+          "source": "deploy/production-snapshot-20261028/overlays/crm/src/services/crm-memory-policy.json"
+        },
+        "src/services/crm-memory-store.service.js": {
+          "sha256": "c5cef6564ec6d13111e609cc0955c36f93cdcdfaa0f240f2105638cd10c4f9b1",
+          "source": "whatsapp_crm/src/services/crm-memory-store.service.js"
+        },
+        "src/services/crm-memory.service.js": {
+          "sha256": "33c675afd42603c8131d32b3e95caecd0001224c2612e518877aac4bd44f0c2c",
+          "source": "whatsapp_crm/src/services/crm-memory.service.js"
+        },
+        "src/services/crm.service.js": {
+          "sha256": "aec046b79083be1c2060e36805e28d65009fe3d51e7b42f6184d5b80816a7683",
+          "source": "whatsapp_crm/src/services/crm.service.js"
+        },
+        "src/services/customer-business-gpt.service.js": {
+          "sha256": "5e0d477b54a0e7eea7f0d67c00f969fb9e147214c921a338ec024521a8160429",
+          "source": "whatsapp_crm/src/services/customer-business-gpt.service.js"
+        },
+        "src/services/customer-context.service.js": {
+          "sha256": "af3a2b4d7d3a3720b29fbea3ba41a85a6a2fa65ecc15074e7943c4ba325eeed8",
+          "source": "whatsapp_crm/src/services/customer-context.service.js"
+        },
+        "src/services/customer-deals.store.js": {
+          "sha256": "dc6c4db0a67a3ad979ba98d9d75ea967f017cd5da5ba8bd29ba98ba802dbc65b",
+          "source": "whatsapp_crm/src/services/customer-deals.store.js"
+        },
+        "src/services/customer-native-crm.service.js": {
+          "sha256": "2017aa78a1921fe558195aff6f4b6d655431dfc13b2c61bdf0afe6805f72997b",
+          "source": "whatsapp_crm/src/services/customer-native-crm.service.js"
+        },
+        "src/services/customer-native-knowledge.service.js": {
+          "sha256": "a640018ac115e2094090702c60ea4b12a713e7b3e31002f12a8a520ee90d5587",
+          "source": "whatsapp_crm/src/services/customer-native-knowledge.service.js"
+        },
+        "src/services/customer-studio.service.js": {
+          "sha256": "354bc009ef61bf838b30ff896bc66d4c6cc38dc07bfc7233427ea1c522b713c1",
+          "source": "whatsapp_crm/src/services/customer-studio.service.js"
+        },
+        "src/services/customer-wait.service.js": {
+          "sha256": "0661643d7b5a2d62cf06e186b874c6acf93d7b9f332816de5f251e62901bcf58",
+          "source": "whatsapp_crm/src/services/customer-wait.service.js"
+        },
+        "src/services/dashboard/ai.audio.js": {
+          "sha256": "ec7bd12a1f3374c665aca20c20619f2721b079ee81a09449aac297f04771a8e3",
+          "source": "whatsapp_crm/src/services/dashboard/ai.audio.js"
+        },
+        "src/services/dashboard/ai.js": {
+          "sha256": "9b1f8e61153588ed5fd7bd9ce32448172cdc12941eea94fe5ff1d98a9813f24b",
+          "source": "whatsapp_crm/src/services/dashboard/ai.js"
+        },
+        "src/services/dashboard/ai.knowledge.js": {
+          "sha256": "8c2fb2de3a13b53bd1d67bb39d062a8ee942af92b4c7af394391280d29c7dbde",
+          "source": "whatsapp_crm/src/services/dashboard/ai.knowledge.js"
+        },
+        "src/services/dashboard/ai.model.js": {
+          "sha256": "92fa6c9cb69abdf50aaaa44559a5027110a93dad050b7c75e4e75c1601cbe356",
+          "source": "whatsapp_crm/src/services/dashboard/ai.model.js"
+        },
+        "src/services/dashboard/ai.pdf.js": {
+          "sha256": "2d2f16b3e5853350fa0e5d741b6be1605bf95b24222ee923fcee65d741a998b6",
+          "source": "whatsapp_crm/src/services/dashboard/ai.pdf.js"
+        },
+        "src/services/dashboard/assets/NotoSans.ttf": {
+          "sha256": "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+          "source": "whatsapp_crm/src/services/dashboard/assets/NotoSans.ttf"
+        },
+        "src/services/dashboard/assets/OFL.txt": {
+          "sha256": "e2e177a32561584d4fc13aaa3cd8e53758a12910f013fe9ca125419111722029",
+          "source": "whatsapp_crm/src/services/dashboard/assets/OFL.txt"
+        },
+        "src/services/dashboard/deal-won-audit.js": {
+          "sha256": "658fef8f3bbfcba4b304fd33f449dc61ae82a6d8601f11bd14c58684a2778c87",
+          "source": "whatsapp_crm/src/services/dashboard/deal-won-audit.js"
+        },
+        "src/services/dashboard/facts.js": {
+          "sha256": "db0d748078964497ffe95a5e48df39bd91f00f9c5333bac6686264c4c3449bc3",
+          "source": "whatsapp_crm/src/services/dashboard/facts.js"
+        },
+        "src/services/dashboard/intelligence.service.js": {
+          "sha256": "4c1c0560b5a2a4f955bf6a5679b0f9c7a34f6209667afcde12b36baeba35c32f",
+          "source": "whatsapp_crm/src/services/dashboard/intelligence.service.js"
+        },
+        "src/services/dashboard/metrics.js": {
+          "sha256": "821714f19a024c7d9f5b214bfec199c5c20c153b1df848a5e56f39fcc841710a",
+          "source": "whatsapp_crm/src/services/dashboard/metrics.js"
+        },
+        "src/services/dashboard/overview.store.js": {
+          "sha256": "ab5535e69c0d960d5a0727948754e491476ca86f06981569d82c3fc0956a13b3",
+          "source": "whatsapp_crm/src/services/dashboard/overview.store.js"
+        },
+        "src/services/database.service.js": {
+          "sha256": "98a122c198233d37eff831d95734e338fe676c857fa40a31473aaeacdf16c6d0",
+          "source": "whatsapp_crm/src/services/database.service.js"
+        },
+        "src/services/email.service.js": {
+          "sha256": "d8964ae509c6ec07610f0481ba580da52af0822afd896946df693555db705d2d",
+          "source": "whatsapp_crm/src/services/email.service.js"
+        },
+        "src/services/followup-intent.js": {
+          "sha256": "08c240e7451b4ec722053b7164bb1fecd620cb6cdcece30d21f06e5a393c093f",
+          "source": "whatsapp_crm/src/services/followup-intent.js"
+        },
+        "src/services/followup.service.js": {
+          "sha256": "883bb09ad93d411e77e31af2240a8c80f1e56a83c3c68d5d30b8a13e5e778c3c",
+          "source": "whatsapp_crm/src/services/followup.service.js"
+        },
+        "src/services/gemini-embeddings.service.js": {
+          "sha256": "45c0beb2357019aeb4fb886fa5eaf189707feff058319b892cb92f19c65de7f4",
+          "source": "whatsapp_crm/src/services/gemini-embeddings.service.js"
+        },
+        "src/services/gemini-onyx.service.js": {
+          "sha256": "0303484b705b4ae4fa266f87d5f7ac8076bcc3068611a58574f647326d466d59",
+          "source": "whatsapp_crm/src/services/gemini-onyx.service.js"
+        },
+        "src/services/gemini-text.service.js": {
+          "sha256": "d5d5a9ed056a4f23282710069ac5e252fed79bb0f50dc96795cbd5937e665733",
+          "source": "whatsapp_crm/src/services/gemini-text.service.js"
+        },
+        "src/services/green-api.service.js": {
+          "sha256": "4c84f00d86c20d771689b0fcfd240e2bddaad85348f2e1062ae2cff3134b8656",
+          "source": "whatsapp_crm/src/services/green-api.service.js"
+        },
+        "src/services/hotel-profile.service.js": {
+          "sha256": "350132b08c58d4b6b4efd8ae46986c8524d0887dffc64628c14359b1b5776559",
+          "source": "whatsapp_crm/src/services/hotel-profile.service.js"
+        },
+        "src/services/identity/customer-access.js": {
+          "sha256": "4c534d9b11ed45dd8a8207bd461de7dc4b55b02e46bdad527997ce64089a019d",
+          "source": "whatsapp_crm/src/services/identity/customer-access.js"
+        },
+        "src/services/identity/customer-role-boundary.js": {
+          "sha256": "87a77bce31264fcf81e3f37f22d25ce813cdc7553c4de90da72a3fa5856559d8",
+          "source": "whatsapp_crm/src/services/identity/customer-role-boundary.js"
+        },
+        "src/services/identity/identity-broker.js": {
+          "sha256": "91c54e764ddc2f5193595e8a0732783e06049c3d3ee6da57e892655a6a8851a1",
+          "source": "whatsapp_crm/src/services/identity/identity-broker.js"
+        },
+        "src/services/identity/identity-store.js": {
+          "sha256": "72b35e22e28e0e3638c15e077dc9dd8e38853c5940055cd2421c9449fabf58f9",
+          "source": "whatsapp_crm/src/services/identity/identity-store.js"
+        },
+        "src/services/identity/invitation-errors.js": {
+          "sha256": "73a5eb77b868b8eb32e6f23d28eb1bd96924669871ff22a07a4f5ebdf3583013",
+          "source": "whatsapp_crm/src/services/identity/invitation-errors.js"
+        },
+        "src/services/identity/keycloak-admin.js": {
+          "sha256": "1890d100f0424057dffa8af2b983d15665fdf59ccbf6d05a2f0c2b43c24c2263",
+          "source": "whatsapp_crm/src/services/identity/keycloak-admin.js"
+        },
+        "src/services/identity/module-access-broker.js": {
+          "sha256": "9554ec82690b82721a8a0e0f5898644316c153a01712619e9e874441ce013a04",
+          "source": "whatsapp_crm/src/services/identity/module-access-broker.js"
+        },
+        "src/services/identity/module-access-store.js": {
+          "sha256": "5e38e1c1f832389ed7d211a2689cc236e116fdf1444370f4fd18b773d00a100a",
+          "source": "whatsapp_crm/src/services/identity/module-access-store.js"
+        },
+        "src/services/identity/oidc.service.js": {
+          "sha256": "b4f77729fc83d75c67cbe721bcba96a9cda8721abf1315f1e6ed10d24c4549d4",
+          "source": "whatsapp_crm/src/services/identity/oidc.service.js"
+        },
+        "src/services/identity/onyx-runtime-access.js": {
+          "sha256": "6658736e18ce37964677cee12ebbf19d34568e40682708e09d4086458349300c",
+          "source": "whatsapp_crm/src/services/identity/onyx-runtime-access.js"
+        },
+        "src/services/identity/owner-verification-store.js": {
+          "sha256": "b33647a4040cdf18c8d80ac1ade157274d5dbb6a3d77f49c65ce0a55bbdf713a",
+          "source": "whatsapp_crm/src/services/identity/owner-verification-store.js"
+        },
+        "src/services/identity/password-recovery.service.js": {
+          "sha256": "df1775ae8251bd67b490da3e50920fe7182cdd48936173881f5e983d97b60eb8",
+          "source": "whatsapp_crm/src/services/identity/password-recovery.service.js"
+        },
+        "src/services/identity/public-url.js": {
+          "sha256": "57264fb53f88f05904a87f6a2e13e3391586bb750ff26cdd90ab8ea91a2783a7",
+          "source": "whatsapp_crm/src/services/identity/public-url.js"
+        },
+        "src/services/identity/reconcile-owner-email.js": {
+          "sha256": "b566577ae3e378a187ed280d80c42afa940482c7ea6b45aa4973f81af8d074ae",
+          "source": "whatsapp_crm/src/services/identity/reconcile-owner-email.js"
+        },
+        "src/services/identity/revocation-worker.js": {
+          "sha256": "371a3b4863ed8a8f236e351e80309c348ce9a113f671706af6028cea049d966c",
+          "source": "whatsapp_crm/src/services/identity/revocation-worker.js"
+        },
+        "src/services/identity/role-policy.js": {
+          "sha256": "b35fe9b86545e997dbd77d853ca974550fc4a9beb5bbe43df39d3e4e823e4d07",
+          "source": "whatsapp_crm/src/services/identity/role-policy.js"
+        },
+        "src/services/identity/self-registration.service.js": {
+          "sha256": "142c5ce68fd013c8b3d302efbb10634726b26a285ae6f9cdc34d55ba0cbd46e5",
+          "source": "whatsapp_crm/src/services/identity/self-registration.service.js"
+        },
+        "src/services/identity/sync-lease-recovery-worker.js": {
+          "sha256": "15b8fc83637556c5f1ae51ca18c57b5df73e5ceb1f1561723e84acab10ee488e",
+          "source": "whatsapp_crm/src/services/identity/sync-lease-recovery-worker.js"
+        },
+        "src/services/identity/system-mailer.service.js": {
+          "sha256": "d7600deea0339c0034560d1826461ebb75dc067b4c93534d69d30a905a991ba3",
+          "source": "whatsapp_crm/src/services/identity/system-mailer.service.js"
+        },
+        "src/services/identity/team-email-reconciliation.js": {
+          "sha256": "2af731588d599b5c683e1fd942580789ea5927db17f779a5df06252547696f21",
+          "source": "whatsapp_crm/src/services/identity/team-email-reconciliation.js"
+        },
+        "src/services/identity/team-enrollment-lease-recovery.js": {
+          "sha256": "1992fa2bb956faa509e6736442b7ee5104c962907a5375415563dc9947edb993",
+          "source": "whatsapp_crm/src/services/identity/team-enrollment-lease-recovery.js"
+        },
+        "src/services/identity/team-invitation-delivery.js": {
+          "sha256": "5d7b68c08ed871be1b25a45662f74915bf1726f23df4c5ddb5061f9f8d289841",
+          "source": "whatsapp_crm/src/services/identity/team-invitation-delivery.js"
+        },
+        "src/services/identity/team-verification-store.js": {
+          "sha256": "2d1438392b098e3e4a4d649d0a874d20f8b16e9ddac76b0d1884d64402d94c54",
+          "source": "whatsapp_crm/src/services/identity/team-verification-store.js"
+        },
+        "src/services/instagram.service.js": {
+          "sha256": "54ba84a9cb3e7365c998e9031dd94b0a1edace5cba62e67d38d103f94a61adcc",
+          "source": "whatsapp_crm/src/services/instagram.service.js"
+        },
+        "src/services/integrations/amocrm-catalog.js": {
+          "sha256": "11961ba2522b4920e20b066f682d707d72ced4e6f3b2f10540676808a4b52db2",
+          "source": "whatsapp_crm/src/services/integrations/amocrm-catalog.js"
+        },
+        "src/services/integrations/amocrm.js": {
+          "sha256": "b2935aeeed119cb0ac5e3a6abf9078839df0942f8cb0d8c5aa9fe921a77e6435",
+          "source": "whatsapp_crm/src/services/integrations/amocrm.js"
+        },
+        "src/services/integrations/http.js": {
+          "sha256": "505e9edae97713867e00c03c04453c9de8ee05dcc5110e089bc4c5b9651c4156",
+          "source": "whatsapp_crm/src/services/integrations/http.js"
+        },
+        "src/services/integrations/store.js": {
+          "sha256": "8f596d353972e91842e4220952737fdb3b40aee59767fd052b38daaab7721bf3",
+          "source": "whatsapp_crm/src/services/integrations/store.js"
+        },
+        "src/services/knowledge-local.service.js": {
+          "sha256": "edb84da6fa7b26d494ca658978233334bd3526180f4ebf55dcd7f1f6c008eccf",
+          "source": "whatsapp_crm/src/services/knowledge-local.service.js"
+        },
+        "src/services/knowledge-preview-ai.service.js": {
+          "sha256": "dfbba5f2777d84169f17112e27ab931dfe07401d01ea918677acfa6b6c599335",
+          "source": "whatsapp_crm/src/services/knowledge-preview-ai.service.js"
+        },
+        "src/services/knowledge-upload.service.js": {
+          "sha256": "ec398159b47d891b621b7358559840fc0a052f8153c1152b6eb77d5075edac46",
+          "source": "whatsapp_crm/src/services/knowledge-upload.service.js"
+        },
+        "src/services/language.service.js": {
+          "sha256": "aaa5e180182bbe86115d0c760c22a985524e89ff25dbbec615c7916c1e83b063",
+          "source": "whatsapp_crm/src/services/language.service.js"
+        },
+        "src/services/max.service.js": {
+          "sha256": "46d897c9cedfe14e08b1bdb16bcf7435d4d413510b89e222c015c5aeab591a84",
+          "source": "whatsapp_crm/src/services/max.service.js"
+        },
+        "src/services/message-batcher.service.js": {
+          "sha256": "754274b34744afc4296b9b2243276ec78b3df255ded6e074ff5a0585fdf38159",
+          "source": "whatsapp_crm/src/services/message-batcher.service.js"
+        },
+        "src/services/ocr.service.js": {
+          "sha256": "8328c367ee4c8b6957237fc1b95baf1fbe8672c5c41e73438ae41b752280960a",
+          "source": "whatsapp_crm/src/services/ocr.service.js"
+        },
+        "src/services/onboarding-state.service.js": {
+          "sha256": "98006b74cdd1d3de1270323795916bf2549504b12d30115e8120b55d8e9f8781",
+          "source": "whatsapp_crm/src/services/onboarding-state.service.js"
+        },
+        "src/services/onyx-knowledge.service.js": {
+          "sha256": "d2dfaeebafe8e231f2c2edd67ea56bf6d0f03cf88178bf41e8360c446f57d990",
+          "source": "whatsapp_crm/src/services/onyx-knowledge.service.js"
+        },
+        "src/services/onyx-llm-gateway.service.js": {
+          "sha256": "0a4710bb137c38753f8189173c4a932fb35e91586d655b50a4ed592e65b866e0",
+          "source": "whatsapp_crm/src/services/onyx-llm-gateway.service.js"
+        },
+        "src/services/onyx/onyx-client.js": {
+          "sha256": "0ad8e4eb2cef73fbc2e7c34b1c87ca7e9a250ec5a88e198e6056fb705221ef17",
+          "source": "whatsapp_crm/src/services/onyx/onyx-client.js"
+        },
+        "src/services/onyx/onyx-credentials.js": {
+          "sha256": "ebf23671328d7dbe781876df61684d14523fba2870eff12d5d953afd3281acd1",
+          "source": "whatsapp_crm/src/services/onyx/onyx-credentials.js"
+        },
+        "src/services/onyx/onyx-native-acl.js": {
+          "sha256": "5683b13e0108aed97129fb8ad9644574ca0e19df5cf81cfd31bb3670562e2f1c",
+          "source": "whatsapp_crm/src/services/onyx/onyx-native-acl.js"
+        },
+        "src/services/onyx/onyx-provisioner.service.js": {
+          "sha256": "5bb12868f8345ab44f8564a4b9dab2083cd18ac4bb17927016f47bb55995b432",
+          "source": "whatsapp_crm/src/services/onyx/onyx-provisioner.service.js"
+        },
+        "src/services/openwa.service.js": {
+          "sha256": "bc9e4394e797bbfa4e205bba0b04433f5b06db0cb168c4390fe1a9ec3b3bf628",
+          "source": "whatsapp_crm/src/services/openwa.service.js"
+        },
+        "src/services/personalization.service.js": {
+          "sha256": "f7135e37b119da808184dda81059e57a192876d3c3f57309228219cb616aba15",
+          "source": "whatsapp_crm/src/services/personalization.service.js"
+        },
+        "src/services/pms/bnovo-pms.provider.js": {
+          "sha256": "66d06b9b9db89e5944dfc6c96fbd9b5c760db5b371b1b3ec6b96a6c0521e6461",
+          "source": "whatsapp_crm/src/services/pms/bnovo-pms.provider.js"
+        },
+        "src/services/pms/pms-crypto.js": {
+          "sha256": "a4717c46e4c5a8c7946a3b2d1845095e628b44905feabf21a06302b2dc706299",
+          "source": "whatsapp_crm/src/services/pms/pms-crypto.js"
+        },
+        "src/services/pms/pms-intent.service.js": {
+          "sha256": "b194a9eae7329bfed891aa502cb5ca2c5f90708745c4f81a454f3f8d6771c22d",
+          "source": "whatsapp_crm/src/services/pms/pms-intent.service.js"
+        },
+        "src/services/pms/pms-provider.js": {
+          "sha256": "c608ba14af7b353da65f0b40c3a30045beb3ebfa529bbb2bf45f722d4a2cbe7c",
+          "source": "whatsapp_crm/src/services/pms/pms-provider.js"
+        },
+        "src/services/pms/pms-store.service.js": {
+          "sha256": "ed8f3b089a620b23821c042c52c3f1015cb67b544d2958797e3e0485a5ad257a",
+          "source": "whatsapp_crm/src/services/pms/pms-store.service.js"
+        },
+        "src/services/pms/pms-utils.js": {
+          "sha256": "cd87daeb37ceb614fe986dd6ecf77f9592e33c3f4b97d60ab20aff368c0cdb8f",
+          "source": "whatsapp_crm/src/services/pms/pms-utils.js"
+        },
+        "src/services/pms/pms.service.js": {
+          "sha256": "2ecc52d1db46c0521ba0977ef47129b4eade4fd63c26d9e36e719ae19b17fd18",
+          "source": "whatsapp_crm/src/services/pms/pms.service.js"
+        },
+        "src/services/postcall-followup.service.js": {
+          "sha256": "8f3cb6c655a4904fad53e0612705419d270abcbfbb5953478f09077d43d25052",
+          "source": "whatsapp_crm/src/services/postcall-followup.service.js"
+        },
+        "src/services/provisioning/business-provisioning-store.service.js": {
+          "sha256": "3eceb79fd8e54d54be09e608509fbc863eb438cd62ab84bc1aa02cd10109ce38",
+          "source": "whatsapp_crm/src/services/provisioning/business-provisioning-store.service.js"
+        },
+        "src/services/provisioning/business-provisioning-worker.service.js": {
+          "sha256": "0d12b7d6b7a6848cf1da4b0174f1beae969f139960773f87c08fa2bb4da9392d",
+          "source": "whatsapp_crm/src/services/provisioning/business-provisioning-worker.service.js"
+        },
+        "src/services/provisioning/business-provisioning.service.js": {
+          "sha256": "a8651795dd5ed1f4ee5abfe9b1609e5801e5b8948ffcd3e80ab852e817a33ed0",
+          "source": "whatsapp_crm/src/services/provisioning/business-provisioning.service.js"
+        },
+        "src/services/provisioning/deployment-store.js": {
+          "sha256": "6f7f7607efb635f7a380b78d29a306478f490816be0ee5d2e3a050d997f1983f",
+          "source": "whatsapp_crm/src/services/provisioning/deployment-store.js"
+        },
+        "src/services/provisioning/isolated-module-provisioner.js": {
+          "sha256": "b09542b897efa2f19f10c41f09f1647aad49566c0fd7131251b79328caca37f4",
+          "source": "whatsapp_crm/src/services/provisioning/isolated-module-provisioner.js"
+        },
+        "src/services/provisioning/module-deployment-client.js": {
+          "sha256": "298e9ea2e8321f71174ae7ac0c78480a0e51a769fd5eb48df77023dae701671e",
+          "source": "whatsapp_crm/src/services/provisioning/module-deployment-client.js"
+        },
+        "src/services/provisioning/workspace-route-client.js": {
+          "sha256": "370b4067cd842b43a1eb9fc0b4977cea015c897dbe0b98e07c5286ff997b3cf1",
+          "source": "whatsapp_crm/src/services/provisioning/workspace-route-client.js"
+        },
+        "src/services/push.service.js": {
+          "sha256": "d01b2d00c452f7ae2d545f5d25c31ab02dd048e00a56fcdc889915925fce8b2c",
+          "source": "whatsapp_crm/src/services/push.service.js"
+        },
+        "src/services/rag.service.js": {
+          "sha256": "970db1a3b34fc10c39d8e82adfef8d53b71466c076cbf44f56806b598b1634e3",
+          "source": "whatsapp_crm/src/services/rag.service.js"
+        },
+        "src/services/reranker.service.js": {
+          "sha256": "4f03dac75b75905594050c7e06fec905c94fc4816eedcd764c251b77578a8924",
+          "source": "whatsapp_crm/src/services/reranker.service.js"
+        },
+        "src/services/sales-brain.service.js": {
+          "sha256": "0eb328f5500d9b6f6d59caa0dabaa2386a6aa39c913de34b092ebd9901d08e24",
+          "source": "whatsapp_crm/src/services/sales-brain.service.js"
+        },
+        "src/services/sales-workspace.service.js": {
+          "sha256": "83d1bb8f387c27f1db860c600e7a0517e20ca62b0c1bda3cf3c79027032d9ce8",
+          "source": "whatsapp_crm/src/services/sales-workspace.service.js"
+        },
+        "src/services/sales-workspace.store.js": {
+          "sha256": "a9dbf870338c3d889f38ce574bc95ce2b7e4b089f8811e82d70638711a066940",
+          "source": "whatsapp_crm/src/services/sales-workspace.store.js"
+        },
+        "src/services/sequence.service.js": {
+          "sha256": "1f887ab9f6293996c4871e94ab61150bb95811ff4bbe2fb93b18f6d25be718ea",
+          "source": "whatsapp_crm/src/services/sequence.service.js"
+        },
+        "src/services/smart-triggers.service.js": {
+          "sha256": "4b7d62ce2996f640fe8cfb7e5846e6772ad618d5f495759bd3df87c89821e39e",
+          "source": "whatsapp_crm/src/services/smart-triggers.service.js"
+        },
+        "src/services/telegram-bot-compat.js": {
+          "sha256": "0a7970ec439494889d455c34dcf8aac77f6e7bb1ead786cdc24e949d16c2a6e7",
+          "source": "whatsapp_crm/src/services/telegram-bot-compat.js"
+        },
+        "src/services/telegram.service.js": {
+          "sha256": "fb65eaf7e9f36df993f35c3f93dc7505175dfa321f453157581541a02206ff85",
+          "source": "whatsapp_crm/src/services/telegram.service.js"
+        },
+        "src/services/telephony/call-reconciliation.js": {
+          "sha256": "d133273336504c1adf95c9149926357de2ff354aa88d2e5460d46f57b6db3a3f",
+          "source": "whatsapp_crm/src/services/telephony/call-reconciliation.js"
+        },
+        "src/services/telephony/call-result.js": {
+          "sha256": "3e5df0862500f874897989194a4d74faabfef0142dff811a24976d7f6a98b575",
+          "source": "whatsapp_crm/src/services/telephony/call-result.js"
+        },
+        "src/services/telephony/campaign-permission.js": {
+          "sha256": "a25f74b37876293ba35df6f962defb6155eafc6b126bf6662f1cd01faf3634c9",
+          "source": "whatsapp_crm/src/services/telephony/campaign-permission.js"
+        },
+        "src/services/telephony/campaigns.js": {
+          "sha256": "12147e24d9b0ce26a226ed36cbfc339a93ec950e93bb3c3bfd1583d7a7970b21",
+          "source": "whatsapp_crm/src/services/telephony/campaigns.js"
+        },
+        "src/services/telephony/credentials.js": {
+          "sha256": "bc4bf0cb0cdba8e6c62b4cdc2480a1474b4bf27bab1dcd241727e87a1ab5df59",
+          "source": "whatsapp_crm/src/services/telephony/credentials.js"
+        },
+        "src/services/telephony/diagnostics.js": {
+          "sha256": "da34c41f6a15625b9ae976848439703ec4d93eaf1d639384789706aaf9307699",
+          "source": "whatsapp_crm/src/services/telephony/diagnostics.js"
+        },
+        "src/services/telephony/existing.js": {
+          "sha256": "71db9ec41cd9b8668e1979df6f11a6aa6979485d025d3a17091444594e06cab3",
+          "source": "whatsapp_crm/src/services/telephony/existing.js"
+        },
+        "src/services/telephony/exolve-client.js": {
+          "sha256": "e6493d4f690208a9f9e6204f75e009101c332dfa7ad5d388aba1b5bbe5e23284",
+          "source": "whatsapp_crm/src/services/telephony/exolve-client.js"
+        },
+        "src/services/telephony/external-sip.js": {
+          "sha256": "e50511332f17ee85ca6b8106d30bdfef402b5a50be8aa45a8c301a1d8aa4a13a",
+          "source": "whatsapp_crm/src/services/telephony/external-sip.js"
+        },
+        "src/services/telephony/host-client.js": {
+          "sha256": "fbf98fd8e3b79296788d49123a13489fd1d2cbb234a3dacb970c3f1f320c00d1",
+          "source": "whatsapp_crm/src/services/telephony/host-client.js"
+        },
+        "src/services/telephony/policy.js": {
+          "sha256": "f207b31129fb6e6426fb7ba406eeaecb651c11d8c0cf721ea93b6357022bb005",
+          "source": "whatsapp_crm/src/services/telephony/policy.js"
+        },
+        "src/services/telephony/recovery.js": {
+          "sha256": "b99857d9c56dd3684d5d6aacaec8c7aa555d5c22b1205afdcd9d9830a5d08512",
+          "source": "whatsapp_crm/src/services/telephony/recovery.js"
+        },
+        "src/services/telephony/service.js": {
+          "sha256": "32f0b376f21ec2c48f1fc1d234dc2499ad6d79ff7b4545561fade9da4067508a",
+          "source": "whatsapp_crm/src/services/telephony/service.js"
+        },
+        "src/services/telephony/store.js": {
+          "sha256": "7fa109ddba70177aec7db1e8ee810f182c061d6994caa2da40df074c25abcc50",
+          "source": "whatsapp_crm/src/services/telephony/store.js"
+        },
+        "src/services/telephony/worker.js": {
+          "sha256": "78ab50a2c233d7c657843ae997824fb3e9cf858d08e28e608ea96a4c10077dda",
+          "source": "whatsapp_crm/src/services/telephony/worker.js"
+        },
+        "src/services/twenty/schema-manifest.json": {
+          "sha256": "2406b4ebb5d9577ee4cdc9ad642ac1847f94dee0e8fc880fe77185fc3fcbb1da",
+          "source": "whatsapp_crm/src/services/twenty/schema-manifest.json"
+        },
+        "src/services/twenty/twenty-client.js": {
+          "sha256": "e139e6f8f1fd7262f6bc6d81bba8977301cfe55f44a4cd3824484fcb2565d5b5",
+          "source": "whatsapp_crm/src/services/twenty/twenty-client.js"
+        },
+        "src/services/twenty/twenty-crypto.js": {
+          "sha256": "d5efb3dfa724ed3ec0bda5e67e4973d0e81c6955bfafe0f900dcc9fa9461e631",
+          "source": "whatsapp_crm/src/services/twenty/twenty-crypto.js"
+        },
+        "src/services/twenty/twenty-metadata.js": {
+          "sha256": "00f8450e0c40eb1e17d56df147b2d73b13ddd12f9563a2442431599e9f053aca",
+          "source": "whatsapp_crm/src/services/twenty/twenty-metadata.js"
+        },
+        "src/services/twenty/twenty-native-provisioning.js": {
+          "sha256": "2cc0fc5945570f4c4984674099ff65e336ed2ad9f56bdbc85296002f3961022b",
+          "source": "whatsapp_crm/src/services/twenty/twenty-native-provisioning.js"
+        },
+        "src/services/twenty/twenty-provisioner.service.js": {
+          "sha256": "21d14a4e1002549f5be572724b7e2b4956a1013e383eb122a7bcdf1a7af58db0",
+          "source": "whatsapp_crm/src/services/twenty/twenty-provisioner.service.js"
+        },
+        "src/services/twenty/twenty-store.service.js": {
+          "sha256": "e82954441d63a3cd639447092c558eb0b44149be683aa86b0f456d737e6d3727",
+          "source": "whatsapp_crm/src/services/twenty/twenty-store.service.js"
+        },
+        "src/services/twenty/twenty.service.js": {
+          "sha256": "21a720d0cd00f64b4eff593478933a4f86ade6d5b3ccaa539a66514872ea006b",
+          "source": "whatsapp_crm/src/services/twenty/twenty.service.js"
+        },
+        "src/services/vk-bot-compat.js": {
+          "sha256": "42794615df79896bef72796cc0e1e076cfc4a2fce70ad6ea0078b909b8c84b48",
+          "source": "whatsapp_crm/src/services/vk-bot-compat.js"
+        },
+        "src/services/vk.service.js": {
+          "sha256": "168e3a25c084fb109736a32025c5e2f78822cd206b40ece5dc8f94e33b89502b",
+          "source": "whatsapp_crm/src/services/vk.service.js"
+        },
+        "src/services/voice-options.service.js": {
+          "sha256": "7828e73f1232a4820875f9b0d16f37984f2a37a62ecc0accbd00e050090a3189",
+          "source": "whatsapp_crm/src/services/voice-options.service.js"
+        },
+        "src/services/voice-provider.service.js": {
+          "sha256": "d91570ac94a61fff69913d7122bca1b0d27eb0b3bcdc1d21a32c272e08c0cc9d",
+          "source": "whatsapp_crm/src/services/voice-provider.service.js"
+        },
+        "src/services/voice-settings.service.js": {
+          "sha256": "6bc8f5214315dec4b2d5509c5a0027eca5b5312b8604b4bbba5984d6c2e5536a",
+          "source": "whatsapp_crm/src/services/voice-settings.service.js"
+        },
+        "src/services/voice-waiting.service.js": {
+          "sha256": "ca78861b06d87fb47262d27dcb682df2fdd0f251b0c9fee62b9370ab1aae121c",
+          "source": "whatsapp_crm/src/services/voice-waiting.service.js"
+        },
+        "src/services/whatsapp-attachments.service.js": {
+          "sha256": "b30c8ea7acc9e702d00003ecc826bb2acd5585932f448c9a869ae5f216f7a34e",
+          "source": "whatsapp_crm/src/services/whatsapp-attachments.service.js"
+        },
+        "src/services/whatsapp-connection.service.js": {
+          "sha256": "a7a8a22f59b0a5b3ce80388bfb9f6a652ff8e0c29e72698b07d23e0eb6881f69",
+          "source": "whatsapp_crm/src/services/whatsapp-connection.service.js"
+        },
+        "src/services/whatsapp-gateway.service.js": {
+          "sha256": "562b5a3c82a7b98f2bb50f7b49341b58a452602b2b71acfb64902a3b24244bf7",
+          "source": "whatsapp_crm/src/services/whatsapp-gateway.service.js"
+        },
+        "src/services/whatsapp-handoff.service.js": {
+          "sha256": "5c65923751f9f4a49b211e534e4665712779007a30cc8a0beef5c4bbd33c8229",
+          "source": "whatsapp_crm/src/services/whatsapp-handoff.service.js"
+        },
+        "src/services/whatsapp-media.service.js": {
+          "sha256": "d620bde31957766ec5e0e60c0a5bf04c0d8996bd42e33717b5096ec97ca71399",
+          "source": "whatsapp_crm/src/services/whatsapp-media.service.js"
+        },
+        "src/services/whatsapp-response-settings.service.js": {
+          "sha256": "ed215e28a24777279b7ebbd1baa8ce0bc32eb6eca7e75c4c72149bd62ca0ac6a",
+          "source": "whatsapp_crm/src/services/whatsapp-response-settings.service.js"
+        },
+        "src/services/whatsapp.service.js": {
+          "sha256": "e22488ff28b6dbfd77b4540a7a91db5ecddf5905bfc44f699674277d0f7a1e1d",
+          "source": "whatsapp_crm/src/services/whatsapp.service.js"
+        },
+        "src/services/yandex-voice-preview.service.js": {
+          "sha256": "2b0597f2160bdb9fec6759ca8298920e294b7c2f974bdd7450b02fea022a1509",
+          "source": "whatsapp_crm/src/services/yandex-voice-preview.service.js"
+        },
+        "src/services/yookassa.service.js": {
+          "sha256": "e2b96f5fb662793d2a433685500a2c25a8ab19e3c15c0a761b94e3e43b163591",
+          "source": "whatsapp_crm/src/services/yookassa.service.js"
+        },
+        "src/utils/constants.js": {
+          "sha256": "83cdefe411b9c08b29c687603ad9dd192ff48605fe608f9a46ac88d2b9c4fccb",
+          "source": "whatsapp_crm/src/utils/constants.js"
+        },
+        "src/utils/logger.js": {
+          "sha256": "1afe8509448387a3d27f2b04e6796600c8f4eb7ffeeb6fce2b000fed0e79b5e0",
+          "source": "whatsapp_crm/src/utils/logger.js"
+        },
+        "src/utils/rag-normalizer.js": {
+          "sha256": "227c9e363700e817ee5bdcc7872a302a73991e8e9b793bdd7e92f6a329d0e79d",
+          "source": "whatsapp_crm/src/utils/rag-normalizer.js"
+        },
+        "src/utils/sharp-mock.js": {
+          "sha256": "dbc084e74ce84ee8eca526d36db98620231de6b7f80a6cdeb9f055b03536c31b",
+          "source": "whatsapp_crm/src/utils/sharp-mock.js"
+        },
+        "src/utils/telegram-options.js": {
+          "sha256": "7962fcc93b5a7f68445096ea7b4462f4c24f1c2861a1d003fe01f29b13193b30",
+          "source": "whatsapp_crm/src/utils/telegram-options.js"
+        }
+      },
+      "runtimeConfigMetadata": {},
+      "notPresentInRuntime": [
+        "src/services/telephony/README.md"
+      ],
+      "overlayFiles": 3
+    },
+    "worker": {
+      "image": "sha256:deaad29ed76c2db39e007cee18e6ca1a4320887b8ebaa3d13fd1b79f8985c8ce",
+      "running": true,
+      "restarts": 0,
+      "health": null,
+      "workdir": "/app",
+      "files": {
+        "package-lock.json": {
+          "sha256": "443395b6abc4c516a425a7fa5547590a35877cb78a7638bc7427890781df607f",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/package-lock.json"
+        },
+        "package.json": {
+          "sha256": "5b9bbd85d3b05be2e1b2b233ef072f2459183c42b9075c2c39ab5edde782eb4b",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/package.json"
+        },
+        "src/app.js": {
+          "sha256": "80c6cbc52cdd098fe8e65404587af134f5212d948dfa075df54e74120c253521",
+          "source": "whatsapp_crm/src/app.js"
+        },
+        "src/config/index.js": {
+          "sha256": "838e4d6bbdc4f1634bb820024d39996a21caf8fa660411d9769534341638d077",
+          "source": "whatsapp_crm/src/config/index.js"
+        },
+        "src/queues/document-queue.js": {
+          "sha256": "140ac2181cc23768d777346398a14f20df7c6a5744149fec87811700bd2ad80c",
+          "source": "whatsapp_crm/src/queues/document-queue.js"
+        },
+        "src/queues/workers/document-worker.js": {
+          "sha256": "708cbdaac5e0b71fa0013d2e556f9ee0ca933b4ef176055f09dff1d9f84524db",
+          "source": "whatsapp_crm/src/queues/workers/document-worker.js"
+        },
+        "src/routes/api.routes.js": {
+          "sha256": "ac5b1ab1b3abfc6757d7f65a6d8294ca5970290b8b1067a97a88daadf9167c23",
+          "source": "whatsapp_crm/src/routes/api.routes.js"
+        },
+        "src/routes/ava-analytics.routes.js": {
+          "sha256": "91e9466ba906f460b8e11d1cde8df63e6fb6bbf938efa476679d7075acc032de",
+          "source": "whatsapp_crm/src/routes/ava-analytics.routes.js"
+        },
+        "src/routes/ava-attention.routes.js": {
+          "sha256": "a3a9bac93f832300203ed76cd02bf58581e98d61589ef84f287fd9f0b5cab0db",
+          "source": "whatsapp_crm/src/routes/ava-attention.routes.js"
+        },
+        "src/routes/ava-autopilot.routes.js": {
+          "sha256": "e88d90e8c8e2a0b03264f7dd8cd3fa2010274ad00854856370b0d3111a6fe6ee",
+          "source": "whatsapp_crm/src/routes/ava-autopilot.routes.js"
+        },
+        "src/routes/ava-availability.routes.js": {
+          "sha256": "b57b56b69f24cc70ae4e56a499009b603687de6b26f622dac2eb415d9d7c2933",
+          "source": "whatsapp_crm/src/routes/ava-availability.routes.js"
+        },
+        "src/routes/ava-collaboration.routes.js": {
+          "sha256": "982b0d8de17c651a08716910fca746a10488745daa8d9e378e0b9b6716305b1a",
+          "source": "whatsapp_crm/src/routes/ava-collaboration.routes.js"
+        },
+        "src/routes/ava-copilot.routes.js": {
+          "sha256": "fef409ebff29d7c432e7b11cfbcf2b12433e6db1169d20dfcace97182a991eeb",
+          "source": "whatsapp_crm/src/routes/ava-copilot.routes.js"
+        },
+        "src/routes/ava-improvements-flags.routes.js": {
+          "sha256": "45413971948463f2556b79d2434802e1b38346b5e7defd416b69864d2ae14597",
+          "source": "whatsapp_crm/src/routes/ava-improvements-flags.routes.js"
+        },
+        "src/routes/ava-knowledge-review.routes.js": {
+          "sha256": "386b26ed64f9dbc506dc48dc98ce6e6ba9757cbd3e0258398d5389e5d967a323",
+          "source": "whatsapp_crm/src/routes/ava-knowledge-review.routes.js"
+        },
+        "src/routes/ava-release-flags.routes.js": {
+          "sha256": "254ac40b4ef204465f6c7691db07673ca3cdeb88def71ed22b6a2b055c9812eb",
+          "source": "whatsapp_crm/src/routes/ava-release-flags.routes.js"
+        },
+        "src/routes/ava-workspace.routes.js": {
+          "sha256": "a5dc64558a3d9772235713fb552fd633d0a24ec1d2666c9d308fe22322f1f7d9",
+          "source": "whatsapp_crm/src/routes/ava-workspace.routes.js"
+        },
+        "src/routes/client-identity.routes.js": {
+          "sha256": "8b6a9022a3f4a21611a78fabc0f1c147b5f5b401cf7a173c5be06669eca1c87e",
+          "source": "whatsapp_crm/src/routes/client-identity.routes.js"
+        },
+        "src/routes/customer-activity.routes.js": {
+          "sha256": "a86ce9eb76f1225699b77602e2ed918c052b8623188b7c34b6d3a8694950be56",
+          "source": "whatsapp_crm/src/routes/customer-activity.routes.js"
+        },
+        "src/routes/customer-business-gpt.routes.js": {
+          "sha256": "b7e620b5563d6e557693a18a379a0408b4f2bdf0aab81dcaa5eab4d729b78693",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/routes/customer-business-gpt.routes.js"
+        },
+        "src/routes/customer-calls.routes.js": {
+          "sha256": "e013bed81bbf6374ac6fe72ec422cb3a26717e88d9c70910cdd594560fa6da56",
+          "source": "whatsapp_crm/src/routes/customer-calls.routes.js"
+        },
+        "src/routes/customer-catalog.routes.js": {
+          "sha256": "d6de5254574f1c6703046a7195a2fb8dfef8658ccd76f17fe80fe48e292422db",
+          "source": "whatsapp_crm/src/routes/customer-catalog.routes.js"
+        },
+        "src/routes/customer-commercial-documents.routes.js": {
+          "sha256": "2122706371a4a899d3ea7bf5acf671480889fbaae2920afa895d66274a762928",
+          "source": "whatsapp_crm/src/routes/customer-commercial-documents.routes.js"
+        },
+        "src/routes/customer-deals.routes.js": {
+          "sha256": "7039078db3f6cd3e34db65b8be719135198c34288eab7e74578ae45c9e6a72f5",
+          "source": "whatsapp_crm/src/routes/customer-deals.routes.js"
+        },
+        "src/routes/customer-external-integrations.routes.js": {
+          "sha256": "12f9b0cbf33f923ce6aa84f5bfcc77a1a935a149c13f4d6a8174b69f000168a3",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/routes/customer-external-integrations.routes.js"
+        },
+        "src/routes/customer-intelligence.routes.js": {
+          "sha256": "e7b652f3824b744a2c4c6b665a451bffe3617278b6013bc5100fd9871180f65a",
+          "source": "whatsapp_crm/src/routes/customer-intelligence.routes.js"
+        },
+        "src/routes/customer-knowledge-preview.routes.js": {
+          "sha256": "e2f68ff8b465c9a7236f0aa27ab796a279f560a335f322e386ec61db0859f125",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/routes/customer-knowledge-preview.routes.js"
+        },
+        "src/routes/customer-native-crm.routes.js": {
+          "sha256": "8c6f1c7e812c3bd1cac0b9dd8f2d4a0f02505ec8bb2253710b44e4f3d1a6094d",
+          "source": "whatsapp_crm/src/routes/customer-native-crm.routes.js"
+        },
+        "src/routes/customer-outbound-attempts.routes.js": {
+          "sha256": "d03ec01af81742c9847658cc99b1572e444476a5bbcc05f2bf42ad8a2860f59e",
+          "source": "whatsapp_crm/src/routes/customer-outbound-attempts.routes.js"
+        },
+        "src/routes/customer-pms.routes.js": {
+          "sha256": "0b9e832e44403d21fa24e300548d14a4257ae8c90d17a59d0892093ea1db36af",
+          "source": "whatsapp_crm/src/routes/customer-pms.routes.js"
+        },
+        "src/routes/customer-studio.routes.js": {
+          "sha256": "f3a05d631b62a2fce8d31d5c1298f975ac6cffd5b1c63b88282de46506b67b3d",
+          "source": "whatsapp_crm/src/routes/customer-studio.routes.js"
+        },
+        "src/routes/customer-team.routes.js": {
+          "sha256": "f8f6624bc41207c9fc7902ef2b737c9a770245942fd3cf82bac6d26d137d17ff",
+          "source": "whatsapp_crm/src/routes/customer-team.routes.js"
+        },
+        "src/routes/customer-trigger-preview.routes.js": {
+          "sha256": "dff97baad012be1fe32b80500ffdcb513215f970ff68846f6e303e2dcf2e389a",
+          "source": "whatsapp_crm/src/routes/customer-trigger-preview.routes.js"
+        },
+        "src/routes/dashboard-ai.routes.js": {
+          "sha256": "782b171606ad7df4c5152e7f704308056224cc4455271f8a7c93acf1d40568a1",
+          "source": "whatsapp_crm/src/routes/dashboard-ai.routes.js"
+        },
+        "src/routes/dashboard-intelligence.routes.js": {
+          "sha256": "ec733ce5c8605f740cd7d77ea57beb2e4efaa46975814033c9299e3b197939d7",
+          "source": "whatsapp_crm/src/routes/dashboard-intelligence.routes.js"
+        },
+        "src/routes/dashboard-metrics.routes.js": {
+          "sha256": "1d20f8ba14c5dc51759d6c65c1e15f8c2bb1e060f300f057ac38351cf15ca64d",
+          "source": "whatsapp_crm/src/routes/dashboard-metrics.routes.js"
+        },
+        "src/routes/identity.routes.js": {
+          "sha256": "7140162fc6051f93ff31def9b88f9f7ff055fd978c88804f85918ec35c3d5d5b",
+          "source": "whatsapp_crm/src/routes/identity.routes.js"
+        },
+        "src/routes/instagram.routes.js": {
+          "sha256": "d3f757bcacb96aae1fcfe4ec0f70e03f326aa92d649f9bf3236ac5101e8165e8",
+          "source": "whatsapp_crm/src/routes/instagram.routes.js"
+        },
+        "src/routes/ml.routes.js": {
+          "sha256": "3a77ad53fe254afc49b0932e99e7a68c9970cb478e0253b00004871c008ed6c3",
+          "source": "whatsapp_crm/src/routes/ml.routes.js"
+        },
+        "src/routes/module-access.routes.js": {
+          "sha256": "65f9f68e09bd4a3ec1779d0b662201b5af1c98766d5572aa84a33a216e32a7b5",
+          "source": "whatsapp_crm/src/routes/module-access.routes.js"
+        },
+        "src/routes/onboarding-state.routes.js": {
+          "sha256": "b88539d1ee266250989a806bb0ed0deb5690114c92acc40bab6dd497f3ee0f1c",
+          "source": "whatsapp_crm/src/routes/onboarding-state.routes.js"
+        },
+        "src/routes/onyx-llm.routes.js": {
+          "sha256": "43be220db7cfb8c504c79559d4b134011df49b448580bbf3a89a82d659d9e0fb",
+          "source": "whatsapp_crm/src/routes/onyx-llm.routes.js"
+        },
+        "src/routes/pms-public.routes.js": {
+          "sha256": "f90f08f8fdb0fa001d2d55de90e83a51e22ac3d06736e5ef1ea26ba25c396c42",
+          "source": "whatsapp_crm/src/routes/pms-public.routes.js"
+        },
+        "src/routes/sales-workspace.routes.js": {
+          "sha256": "e55a6c514265b075619959238028070481c602ba9150ce7229e455415e43c64a",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/routes/sales-workspace.routes.js"
+        },
+        "src/routes/telephony-campaigns.routes.js": {
+          "sha256": "2d13b4d1a73e41d6dc80acdf3ca239e71f90c6cb1376405641df8b9bbc457db1",
+          "source": "whatsapp_crm/src/routes/telephony-campaigns.routes.js"
+        },
+        "src/routes/telephony-internal.routes.js": {
+          "sha256": "6fd251a7d7f33b4b5aef4041f8bb27ba5805f3bc36eb5c0031919b98dc44fbca",
+          "source": "whatsapp_crm/src/routes/telephony-internal.routes.js"
+        },
+        "src/routes/telephony.routes.js": {
+          "sha256": "41f1ef7d6ebe48a8cd155a16397af158fffccb5826b29eff6d52b23967e953a3",
+          "source": "whatsapp_crm/src/routes/telephony.routes.js"
+        },
+        "src/routes/twenty-public.routes.js": {
+          "sha256": "c415ef5aab84b73d02ed881f244b85bf5dce35fb34af76a2afca720efdb3a9ca",
+          "source": "whatsapp_crm/src/routes/twenty-public.routes.js"
+        },
+        "src/routes/voice-settings.routes.js": {
+          "sha256": "eda05fa62d41ac28de396a4463e5332ce5ad769dfda3841b4a39c238d80f0500",
+          "source": "whatsapp_crm/src/routes/voice-settings.routes.js"
+        },
+        "src/routes/whatsapp-response-settings.routes.js": {
+          "sha256": "f1323b93eb78baaf65dcb64f0300309665adf86c2391916d68869ee96ab35917",
+          "source": "whatsapp_crm/src/routes/whatsapp-response-settings.routes.js"
+        },
+        "src/services/ai-request.service.js": {
+          "sha256": "85df7225108fca4dc7441497c08024e4635cda109f029eba2675feda1ba5f44a",
+          "source": "whatsapp_crm/src/services/ai-request.service.js"
+        },
+        "src/services/ai.service.js": {
+          "sha256": "2e3d9678a85a3dcd8675556d924bb2c6440b687378ab56484d2f5d4df167917d",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/ai.service.js"
+        },
+        "src/services/assistant-draft.service.js": {
+          "sha256": "cb60bc850bd120ca2de5345e8b954a6f3160cc3d59506b741ab8caad6b9cf471",
+          "source": "whatsapp_crm/src/services/assistant-draft.service.js"
+        },
+        "src/services/assistant-public-pages.service.js": {
+          "sha256": "95aec539cbbec487edfd459ba61dcfa98846296133445b17ab7b0ff5f0a55eb6",
+          "source": "whatsapp_crm/src/services/assistant-public-pages.service.js"
+        },
+        "src/services/auth.service.js": {
+          "sha256": "b2a532b1d579a1406455756f80dbf41dfc5d2aab72b9a0010165da2604a521ff",
+          "source": "whatsapp_crm/src/services/auth.service.js"
+        },
+        "src/services/ava-analytics.service.js": {
+          "sha256": "0e3eef9f32e600e53006c2cf6c54dc3b8b24ccb3dc1bd5d34a2909d513eb3f70",
+          "source": "whatsapp_crm/src/services/ava-analytics.service.js"
+        },
+        "src/services/ava-attention.service.js": {
+          "sha256": "f8e353ee1a0557edc3f286f54c9b7ebd31037078007f2ad01e46c6c22881fed5",
+          "source": "whatsapp_crm/src/services/ava-attention.service.js"
+        },
+        "src/services/ava-autopilot.service.js": {
+          "sha256": "d801d3f87d697df5784fd43b55b33b922b9138ba5c7bbaec76b5fef1d1ee3c72",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/ava-autopilot.service.js"
+        },
+        "src/services/ava-autopilot.store.js": {
+          "sha256": "49a687aba659a29be426decef2de1d4545859be7b82caa110e911c1d29702fb0",
+          "source": "whatsapp_crm/src/services/ava-autopilot.store.js"
+        },
+        "src/services/ava-availability.service.js": {
+          "sha256": "0c26649270aededa13085480ef6230005f7412144fe61f1e5b40f4281a13402a",
+          "source": "whatsapp_crm/src/services/ava-availability.service.js"
+        },
+        "src/services/ava-collaboration.service.js": {
+          "sha256": "bb2493725faad736fa88759252379f4ffb9f65d3bd1f5acee4df87f041799423",
+          "source": "whatsapp_crm/src/services/ava-collaboration.service.js"
+        },
+        "src/services/ava-copilot.service.js": {
+          "sha256": "c991b6888576867163bcf6a9d262c85fc0ee5c052c6b5188998d48045dff3698",
+          "source": "whatsapp_crm/src/services/ava-copilot.service.js"
+        },
+        "src/services/ava-improvements-flags.service.js": {
+          "sha256": "fb60945e7cf3656db6054265212ca4d36e1e017d5d671e09cbaf0b5a83da7925",
+          "source": "whatsapp_crm/src/services/ava-improvements-flags.service.js"
+        },
+        "src/services/ava-knowledge-review.service.js": {
+          "sha256": "015f5155633732fb8d1df258d069030aa5cdb2977281768c85ef1b5486cda76e",
+          "source": "whatsapp_crm/src/services/ava-knowledge-review.service.js"
+        },
+        "src/services/ava-outbound.service.js": {
+          "sha256": "3e252e09146e9962ea30c4341fe1c63248c701d5cd95e14282f37f5e223f2af1",
+          "source": "whatsapp_crm/src/services/ava-outbound.service.js"
+        },
+        "src/services/ava-release-flags.service.js": {
+          "sha256": "55bb7d9bd4bc56558eca71d7c53ad452f035e66b744795dfba0481efdb9b3186",
+          "source": "whatsapp_crm/src/services/ava-release-flags.service.js"
+        },
+        "src/services/ava-send-recovery.service.js": {
+          "sha256": "5989f75e0c8c897a86dfb785e56de54067d9e47b0b985a9b8f888236a3805e72",
+          "source": "whatsapp_crm/src/services/ava-send-recovery.service.js"
+        },
+        "src/services/ava-workspace.service.js": {
+          "sha256": "e2ce256dc224948d86fdf9069ad1ad6c71c7e7b1df5426c4ccc7626f84e21962",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/ava-workspace.service.js"
+        },
+        "src/services/ava-workspace.store.js": {
+          "sha256": "de2276737a901adb637b8137c6e4c78c71b475460d9dc47775d294567a275d09",
+          "source": "whatsapp_crm/src/services/ava-workspace.store.js"
+        },
+        "src/services/avito.service.js": {
+          "sha256": "032e4f54418d4072003305b10a1426abc8db540a2d8d7a00cfd4bc382518d664",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/avito.service.js"
+        },
+        "src/services/barista-bot.service.js": {
+          "sha256": "0805fd8cfd40a58ca436b42c4976293c32e0ec580259f1c8f233107a709ec04c",
+          "source": "whatsapp_crm/src/services/barista-bot.service.js"
+        },
+        "src/services/cache.service.js": {
+          "sha256": "8a9ba97c20f20fd89f47f67957f23bb846895e188cfc7d36d388773a7d6bca0c",
+          "source": "whatsapp_crm/src/services/cache.service.js"
+        },
+        "src/services/catalog-import.service.js": {
+          "sha256": "fef14e1e3ebc7ba03b72e4a6b720162a99655abe81f789fc5a850d28488bfa80",
+          "source": "whatsapp_crm/src/services/catalog-import.service.js"
+        },
+        "src/services/catalog.store.js": {
+          "sha256": "127bd2c6918dc4295a1afd0d09b5f9f8b39fa3832be0b06e76b5fdf9eb86e734",
+          "source": "whatsapp_crm/src/services/catalog.store.js"
+        },
+        "src/services/channel-context.service.js": {
+          "sha256": "a7abf1e9f59c20b70631c65afdd616af8e70595716afdacc2e918e7ee5254e65",
+          "source": "whatsapp_crm/src/services/channel-context.service.js"
+        },
+        "src/services/channel-credentials.js": {
+          "sha256": "e41fd48ad745c862ae8676fc9fd92abb615ee3cf38038914abe2d3e7af4e1f57",
+          "source": "whatsapp_crm/src/services/channel-credentials.js"
+        },
+        "src/services/channel-customer-context.service.js": {
+          "sha256": "c8fc0e69af346d7a837d6d51fa196407c54256d195b9b767a6387ec8dafd4ade",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/channel-customer-context.service.js"
+        },
+        "src/services/channel-jobs.store.js": {
+          "sha256": "a58f7f0cc4819fadaaa68be47c881a70b08ed8165dc8e3a22faaf92d75d8fe5c",
+          "source": "whatsapp_crm/src/services/channel-jobs.store.js"
+        },
+        "src/services/channel-router.service.js": {
+          "sha256": "ef523cb3fae3f58d049f36c6ded74a36eeb3d3a77ea715b02934f9c9ebfd45a9",
+          "source": "whatsapp_crm/src/services/channel-router.service.js"
+        },
+        "src/services/client-call-history.service.js": {
+          "sha256": "faa3ac46631d628fbedf549492856e862f21c28c641465db129c38bd89998f17",
+          "source": "whatsapp_crm/src/services/client-call-history.service.js"
+        },
+        "src/services/client-identity.service.js": {
+          "sha256": "48bce7ad0502d761f9191c4dd8808b765f54ba35df2f65df544aedc9306dde2e",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/client-identity.service.js"
+        },
+        "src/services/coffee-feedback.service.js": {
+          "sha256": "58ccf7d98dde28d2033b58af8552cf95c8ec5c66b250c710c90abfbb1b2e3fe4",
+          "source": "whatsapp_crm/src/services/coffee-feedback.service.js"
+        },
+        "src/services/commercial-documents.service.js": {
+          "sha256": "7a988c8f2cc5a281a599b32ab61d72688e42101368444f470fe28d8412d8866e",
+          "source": "whatsapp_crm/src/services/commercial-documents.service.js"
+        },
+        "src/services/crm-memory-policy.json": {
+          "sha256": "1483b29cabb212a4756ea54e51208f89f30d1aa1b306b48cdf3d975db674f23a",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/crm-memory-policy.json"
+        },
+        "src/services/crm-memory-store.service.js": {
+          "sha256": "c5cef6564ec6d13111e609cc0955c36f93cdcdfaa0f240f2105638cd10c4f9b1",
+          "source": "whatsapp_crm/src/services/crm-memory-store.service.js"
+        },
+        "src/services/crm-memory.service.js": {
+          "sha256": "33c675afd42603c8131d32b3e95caecd0001224c2612e518877aac4bd44f0c2c",
+          "source": "whatsapp_crm/src/services/crm-memory.service.js"
+        },
+        "src/services/crm.service.js": {
+          "sha256": "aec046b79083be1c2060e36805e28d65009fe3d51e7b42f6184d5b80816a7683",
+          "source": "whatsapp_crm/src/services/crm.service.js"
+        },
+        "src/services/customer-business-gpt.service.js": {
+          "sha256": "5e0d477b54a0e7eea7f0d67c00f969fb9e147214c921a338ec024521a8160429",
+          "source": "whatsapp_crm/src/services/customer-business-gpt.service.js"
+        },
+        "src/services/customer-context.service.js": {
+          "sha256": "af3a2b4d7d3a3720b29fbea3ba41a85a6a2fa65ecc15074e7943c4ba325eeed8",
+          "source": "whatsapp_crm/src/services/customer-context.service.js"
+        },
+        "src/services/customer-deals.store.js": {
+          "sha256": "dc6c4db0a67a3ad979ba98d9d75ea967f017cd5da5ba8bd29ba98ba802dbc65b",
+          "source": "whatsapp_crm/src/services/customer-deals.store.js"
+        },
+        "src/services/customer-native-crm.service.js": {
+          "sha256": "2017aa78a1921fe558195aff6f4b6d655431dfc13b2c61bdf0afe6805f72997b",
+          "source": "whatsapp_crm/src/services/customer-native-crm.service.js"
+        },
+        "src/services/customer-native-knowledge.service.js": {
+          "sha256": "a640018ac115e2094090702c60ea4b12a713e7b3e31002f12a8a520ee90d5587",
+          "source": "whatsapp_crm/src/services/customer-native-knowledge.service.js"
+        },
+        "src/services/customer-studio.service.js": {
+          "sha256": "354bc009ef61bf838b30ff896bc66d4c6cc38dc07bfc7233427ea1c522b713c1",
+          "source": "whatsapp_crm/src/services/customer-studio.service.js"
+        },
+        "src/services/customer-wait.service.js": {
+          "sha256": "0661643d7b5a2d62cf06e186b874c6acf93d7b9f332816de5f251e62901bcf58",
+          "source": "whatsapp_crm/src/services/customer-wait.service.js"
+        },
+        "src/services/dashboard/ai.audio.js": {
+          "sha256": "ec7bd12a1f3374c665aca20c20619f2721b079ee81a09449aac297f04771a8e3",
+          "source": "whatsapp_crm/src/services/dashboard/ai.audio.js"
+        },
+        "src/services/dashboard/ai.js": {
+          "sha256": "9b1f8e61153588ed5fd7bd9ce32448172cdc12941eea94fe5ff1d98a9813f24b",
+          "source": "whatsapp_crm/src/services/dashboard/ai.js"
+        },
+        "src/services/dashboard/ai.knowledge.js": {
+          "sha256": "ea7d507290023ebfe52fa92ad65c6c177b3c947553fdd814de2707af1a7ec76e",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/dashboard/ai.knowledge.js"
+        },
+        "src/services/dashboard/ai.model.js": {
+          "sha256": "92fa6c9cb69abdf50aaaa44559a5027110a93dad050b7c75e4e75c1601cbe356",
+          "source": "whatsapp_crm/src/services/dashboard/ai.model.js"
+        },
+        "src/services/dashboard/ai.pdf.js": {
+          "sha256": "2d2f16b3e5853350fa0e5d741b6be1605bf95b24222ee923fcee65d741a998b6",
+          "source": "whatsapp_crm/src/services/dashboard/ai.pdf.js"
+        },
+        "src/services/dashboard/assets/NotoSans.ttf": {
+          "sha256": "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+          "source": "whatsapp_crm/src/services/dashboard/assets/NotoSans.ttf"
+        },
+        "src/services/dashboard/assets/OFL.txt": {
+          "sha256": "e2e177a32561584d4fc13aaa3cd8e53758a12910f013fe9ca125419111722029",
+          "source": "whatsapp_crm/src/services/dashboard/assets/OFL.txt"
+        },
+        "src/services/dashboard/deal-won-audit.js": {
+          "sha256": "658fef8f3bbfcba4b304fd33f449dc61ae82a6d8601f11bd14c58684a2778c87",
+          "source": "whatsapp_crm/src/services/dashboard/deal-won-audit.js"
+        },
+        "src/services/dashboard/facts.js": {
+          "sha256": "db0d748078964497ffe95a5e48df39bd91f00f9c5333bac6686264c4c3449bc3",
+          "source": "whatsapp_crm/src/services/dashboard/facts.js"
+        },
+        "src/services/dashboard/intelligence.service.js": {
+          "sha256": "4c1c0560b5a2a4f955bf6a5679b0f9c7a34f6209667afcde12b36baeba35c32f",
+          "source": "whatsapp_crm/src/services/dashboard/intelligence.service.js"
+        },
+        "src/services/dashboard/metrics.js": {
+          "sha256": "821714f19a024c7d9f5b214bfec199c5c20c153b1df848a5e56f39fcc841710a",
+          "source": "whatsapp_crm/src/services/dashboard/metrics.js"
+        },
+        "src/services/dashboard/overview.store.js": {
+          "sha256": "ab5535e69c0d960d5a0727948754e491476ca86f06981569d82c3fc0956a13b3",
+          "source": "whatsapp_crm/src/services/dashboard/overview.store.js"
+        },
+        "src/services/database.service.js": {
+          "sha256": "fb3c6b341c80b5cf6b0cb1863be4d3d8c77f4171cc4b6400cad6555793eecd7d",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/database.service.js"
+        },
+        "src/services/email.service.js": {
+          "sha256": "d8964ae509c6ec07610f0481ba580da52af0822afd896946df693555db705d2d",
+          "source": "whatsapp_crm/src/services/email.service.js"
+        },
+        "src/services/followup-intent.js": {
+          "sha256": "08c240e7451b4ec722053b7164bb1fecd620cb6cdcece30d21f06e5a393c093f",
+          "source": "whatsapp_crm/src/services/followup-intent.js"
+        },
+        "src/services/followup.service.js": {
+          "sha256": "883bb09ad93d411e77e31af2240a8c80f1e56a83c3c68d5d30b8a13e5e778c3c",
+          "source": "whatsapp_crm/src/services/followup.service.js"
+        },
+        "src/services/gemini-embeddings.service.js": {
+          "sha256": "45c0beb2357019aeb4fb886fa5eaf189707feff058319b892cb92f19c65de7f4",
+          "source": "whatsapp_crm/src/services/gemini-embeddings.service.js"
+        },
+        "src/services/gemini-onyx.service.js": {
+          "sha256": "a5e7f6696d6998479f4aa078a7906131b08e510075a025a36a98ba907ad06c1d",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/gemini-onyx.service.js"
+        },
+        "src/services/gemini-text.service.js": {
+          "sha256": "d5d5a9ed056a4f23282710069ac5e252fed79bb0f50dc96795cbd5937e665733",
+          "source": "whatsapp_crm/src/services/gemini-text.service.js"
+        },
+        "src/services/green-api.service.js": {
+          "sha256": "4c84f00d86c20d771689b0fcfd240e2bddaad85348f2e1062ae2cff3134b8656",
+          "source": "whatsapp_crm/src/services/green-api.service.js"
+        },
+        "src/services/hotel-profile.service.js": {
+          "sha256": "350132b08c58d4b6b4efd8ae46986c8524d0887dffc64628c14359b1b5776559",
+          "source": "whatsapp_crm/src/services/hotel-profile.service.js"
+        },
+        "src/services/identity/customer-access.js": {
+          "sha256": "4c534d9b11ed45dd8a8207bd461de7dc4b55b02e46bdad527997ce64089a019d",
+          "source": "whatsapp_crm/src/services/identity/customer-access.js"
+        },
+        "src/services/identity/customer-role-boundary.js": {
+          "sha256": "c057526d541cb5064f088eef30eaaf7c4aeafe8fc14ec2ae97121ca6ca6bea3e",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/identity/customer-role-boundary.js"
+        },
+        "src/services/identity/identity-broker.js": {
+          "sha256": "91c54e764ddc2f5193595e8a0732783e06049c3d3ee6da57e892655a6a8851a1",
+          "source": "whatsapp_crm/src/services/identity/identity-broker.js"
+        },
+        "src/services/identity/identity-store.js": {
+          "sha256": "72b35e22e28e0e3638c15e077dc9dd8e38853c5940055cd2421c9449fabf58f9",
+          "source": "whatsapp_crm/src/services/identity/identity-store.js"
+        },
+        "src/services/identity/invitation-errors.js": {
+          "sha256": "73a5eb77b868b8eb32e6f23d28eb1bd96924669871ff22a07a4f5ebdf3583013",
+          "source": "whatsapp_crm/src/services/identity/invitation-errors.js"
+        },
+        "src/services/identity/keycloak-admin.js": {
+          "sha256": "1890d100f0424057dffa8af2b983d15665fdf59ccbf6d05a2f0c2b43c24c2263",
+          "source": "whatsapp_crm/src/services/identity/keycloak-admin.js"
+        },
+        "src/services/identity/module-access-broker.js": {
+          "sha256": "9554ec82690b82721a8a0e0f5898644316c153a01712619e9e874441ce013a04",
+          "source": "whatsapp_crm/src/services/identity/module-access-broker.js"
+        },
+        "src/services/identity/module-access-store.js": {
+          "sha256": "5e38e1c1f832389ed7d211a2689cc236e116fdf1444370f4fd18b773d00a100a",
+          "source": "whatsapp_crm/src/services/identity/module-access-store.js"
+        },
+        "src/services/identity/oidc.service.js": {
+          "sha256": "b4f77729fc83d75c67cbe721bcba96a9cda8721abf1315f1e6ed10d24c4549d4",
+          "source": "whatsapp_crm/src/services/identity/oidc.service.js"
+        },
+        "src/services/identity/onyx-runtime-access.js": {
+          "sha256": "6658736e18ce37964677cee12ebbf19d34568e40682708e09d4086458349300c",
+          "source": "whatsapp_crm/src/services/identity/onyx-runtime-access.js"
+        },
+        "src/services/identity/owner-verification-store.js": {
+          "sha256": "b33647a4040cdf18c8d80ac1ade157274d5dbb6a3d77f49c65ce0a55bbdf713a",
+          "source": "whatsapp_crm/src/services/identity/owner-verification-store.js"
+        },
+        "src/services/identity/password-recovery.service.js": {
+          "sha256": "df1775ae8251bd67b490da3e50920fe7182cdd48936173881f5e983d97b60eb8",
+          "source": "whatsapp_crm/src/services/identity/password-recovery.service.js"
+        },
+        "src/services/identity/public-url.js": {
+          "sha256": "57264fb53f88f05904a87f6a2e13e3391586bb750ff26cdd90ab8ea91a2783a7",
+          "source": "whatsapp_crm/src/services/identity/public-url.js"
+        },
+        "src/services/identity/reconcile-owner-email.js": {
+          "sha256": "b566577ae3e378a187ed280d80c42afa940482c7ea6b45aa4973f81af8d074ae",
+          "source": "whatsapp_crm/src/services/identity/reconcile-owner-email.js"
+        },
+        "src/services/identity/revocation-worker.js": {
+          "sha256": "371a3b4863ed8a8f236e351e80309c348ce9a113f671706af6028cea049d966c",
+          "source": "whatsapp_crm/src/services/identity/revocation-worker.js"
+        },
+        "src/services/identity/role-policy.js": {
+          "sha256": "b35fe9b86545e997dbd77d853ca974550fc4a9beb5bbe43df39d3e4e823e4d07",
+          "source": "whatsapp_crm/src/services/identity/role-policy.js"
+        },
+        "src/services/identity/self-registration.service.js": {
+          "sha256": "142c5ce68fd013c8b3d302efbb10634726b26a285ae6f9cdc34d55ba0cbd46e5",
+          "source": "whatsapp_crm/src/services/identity/self-registration.service.js"
+        },
+        "src/services/identity/sync-lease-recovery-worker.js": {
+          "sha256": "15b8fc83637556c5f1ae51ca18c57b5df73e5ceb1f1561723e84acab10ee488e",
+          "source": "whatsapp_crm/src/services/identity/sync-lease-recovery-worker.js"
+        },
+        "src/services/identity/system-mailer.service.js": {
+          "sha256": "d7600deea0339c0034560d1826461ebb75dc067b4c93534d69d30a905a991ba3",
+          "source": "whatsapp_crm/src/services/identity/system-mailer.service.js"
+        },
+        "src/services/identity/team-email-reconciliation.js": {
+          "sha256": "2af731588d599b5c683e1fd942580789ea5927db17f779a5df06252547696f21",
+          "source": "whatsapp_crm/src/services/identity/team-email-reconciliation.js"
+        },
+        "src/services/identity/team-enrollment-lease-recovery.js": {
+          "sha256": "1992fa2bb956faa509e6736442b7ee5104c962907a5375415563dc9947edb993",
+          "source": "whatsapp_crm/src/services/identity/team-enrollment-lease-recovery.js"
+        },
+        "src/services/identity/team-invitation-delivery.js": {
+          "sha256": "5d7b68c08ed871be1b25a45662f74915bf1726f23df4c5ddb5061f9f8d289841",
+          "source": "whatsapp_crm/src/services/identity/team-invitation-delivery.js"
+        },
+        "src/services/identity/team-verification-store.js": {
+          "sha256": "2d1438392b098e3e4a4d649d0a874d20f8b16e9ddac76b0d1884d64402d94c54",
+          "source": "whatsapp_crm/src/services/identity/team-verification-store.js"
+        },
+        "src/services/instagram.service.js": {
+          "sha256": "54ba84a9cb3e7365c998e9031dd94b0a1edace5cba62e67d38d103f94a61adcc",
+          "source": "whatsapp_crm/src/services/instagram.service.js"
+        },
+        "src/services/integrations/amocrm.js": {
+          "sha256": "2043e06b01c5572c5f5b2131c5180b11cffc6ea1dd40eef0e547d438d8a5b5e2",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/integrations/amocrm.js"
+        },
+        "src/services/integrations/http.js": {
+          "sha256": "dafc431d17c92d2080cdb1100f6ee15847e9753d31bb09517f3576a7c0b72d62",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/integrations/http.js"
+        },
+        "src/services/integrations/store.js": {
+          "sha256": "45f6b28fb4dbb19d7ad60c15baac9a817ca7d6552481e4540627e552b3c5276a",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/integrations/store.js"
+        },
+        "src/services/knowledge-local.service.js": {
+          "sha256": "edb84da6fa7b26d494ca658978233334bd3526180f4ebf55dcd7f1f6c008eccf",
+          "source": "whatsapp_crm/src/services/knowledge-local.service.js"
+        },
+        "src/services/knowledge-upload.service.js": {
+          "sha256": "ec398159b47d891b621b7358559840fc0a052f8153c1152b6eb77d5075edac46",
+          "source": "whatsapp_crm/src/services/knowledge-upload.service.js"
+        },
+        "src/services/language.service.js": {
+          "sha256": "aaa5e180182bbe86115d0c760c22a985524e89ff25dbbec615c7916c1e83b063",
+          "source": "whatsapp_crm/src/services/language.service.js"
+        },
+        "src/services/max.service.js": {
+          "sha256": "46d897c9cedfe14e08b1bdb16bcf7435d4d413510b89e222c015c5aeab591a84",
+          "source": "whatsapp_crm/src/services/max.service.js"
+        },
+        "src/services/message-batcher.service.js": {
+          "sha256": "754274b34744afc4296b9b2243276ec78b3df255ded6e074ff5a0585fdf38159",
+          "source": "whatsapp_crm/src/services/message-batcher.service.js"
+        },
+        "src/services/ocr.service.js": {
+          "sha256": "8328c367ee4c8b6957237fc1b95baf1fbe8672c5c41e73438ae41b752280960a",
+          "source": "whatsapp_crm/src/services/ocr.service.js"
+        },
+        "src/services/onboarding-state.service.js": {
+          "sha256": "98006b74cdd1d3de1270323795916bf2549504b12d30115e8120b55d8e9f8781",
+          "source": "whatsapp_crm/src/services/onboarding-state.service.js"
+        },
+        "src/services/onyx-knowledge.service.js": {
+          "sha256": "d2dfaeebafe8e231f2c2edd67ea56bf6d0f03cf88178bf41e8360c446f57d990",
+          "source": "whatsapp_crm/src/services/onyx-knowledge.service.js"
+        },
+        "src/services/onyx-llm-gateway.service.js": {
+          "sha256": "0a4710bb137c38753f8189173c4a932fb35e91586d655b50a4ed592e65b866e0",
+          "source": "whatsapp_crm/src/services/onyx-llm-gateway.service.js"
+        },
+        "src/services/onyx/onyx-client.js": {
+          "sha256": "0ad8e4eb2cef73fbc2e7c34b1c87ca7e9a250ec5a88e198e6056fb705221ef17",
+          "source": "whatsapp_crm/src/services/onyx/onyx-client.js"
+        },
+        "src/services/onyx/onyx-credentials.js": {
+          "sha256": "ebf23671328d7dbe781876df61684d14523fba2870eff12d5d953afd3281acd1",
+          "source": "whatsapp_crm/src/services/onyx/onyx-credentials.js"
+        },
+        "src/services/onyx/onyx-native-acl.js": {
+          "sha256": "5683b13e0108aed97129fb8ad9644574ca0e19df5cf81cfd31bb3670562e2f1c",
+          "source": "whatsapp_crm/src/services/onyx/onyx-native-acl.js"
+        },
+        "src/services/onyx/onyx-provisioner.service.js": {
+          "sha256": "5bb12868f8345ab44f8564a4b9dab2083cd18ac4bb17927016f47bb55995b432",
+          "source": "whatsapp_crm/src/services/onyx/onyx-provisioner.service.js"
+        },
+        "src/services/openwa.service.js": {
+          "sha256": "bc9e4394e797bbfa4e205bba0b04433f5b06db0cb168c4390fe1a9ec3b3bf628",
+          "source": "whatsapp_crm/src/services/openwa.service.js"
+        },
+        "src/services/personalization.service.js": {
+          "sha256": "f7135e37b119da808184dda81059e57a192876d3c3f57309228219cb616aba15",
+          "source": "whatsapp_crm/src/services/personalization.service.js"
+        },
+        "src/services/pms/bnovo-pms.provider.js": {
+          "sha256": "66d06b9b9db89e5944dfc6c96fbd9b5c760db5b371b1b3ec6b96a6c0521e6461",
+          "source": "whatsapp_crm/src/services/pms/bnovo-pms.provider.js"
+        },
+        "src/services/pms/pms-crypto.js": {
+          "sha256": "a4717c46e4c5a8c7946a3b2d1845095e628b44905feabf21a06302b2dc706299",
+          "source": "whatsapp_crm/src/services/pms/pms-crypto.js"
+        },
+        "src/services/pms/pms-intent.service.js": {
+          "sha256": "b194a9eae7329bfed891aa502cb5ca2c5f90708745c4f81a454f3f8d6771c22d",
+          "source": "whatsapp_crm/src/services/pms/pms-intent.service.js"
+        },
+        "src/services/pms/pms-provider.js": {
+          "sha256": "c608ba14af7b353da65f0b40c3a30045beb3ebfa529bbb2bf45f722d4a2cbe7c",
+          "source": "whatsapp_crm/src/services/pms/pms-provider.js"
+        },
+        "src/services/pms/pms-store.service.js": {
+          "sha256": "ed8f3b089a620b23821c042c52c3f1015cb67b544d2958797e3e0485a5ad257a",
+          "source": "whatsapp_crm/src/services/pms/pms-store.service.js"
+        },
+        "src/services/pms/pms-utils.js": {
+          "sha256": "cd87daeb37ceb614fe986dd6ecf77f9592e33c3f4b97d60ab20aff368c0cdb8f",
+          "source": "whatsapp_crm/src/services/pms/pms-utils.js"
+        },
+        "src/services/pms/pms.service.js": {
+          "sha256": "2ecc52d1db46c0521ba0977ef47129b4eade4fd63c26d9e36e719ae19b17fd18",
+          "source": "whatsapp_crm/src/services/pms/pms.service.js"
+        },
+        "src/services/postcall-followup.service.js": {
+          "sha256": "8f3cb6c655a4904fad53e0612705419d270abcbfbb5953478f09077d43d25052",
+          "source": "whatsapp_crm/src/services/postcall-followup.service.js"
+        },
+        "src/services/provisioning/business-provisioning-store.service.js": {
+          "sha256": "3eceb79fd8e54d54be09e608509fbc863eb438cd62ab84bc1aa02cd10109ce38",
+          "source": "whatsapp_crm/src/services/provisioning/business-provisioning-store.service.js"
+        },
+        "src/services/provisioning/business-provisioning-worker.service.js": {
+          "sha256": "0d12b7d6b7a6848cf1da4b0174f1beae969f139960773f87c08fa2bb4da9392d",
+          "source": "whatsapp_crm/src/services/provisioning/business-provisioning-worker.service.js"
+        },
+        "src/services/provisioning/business-provisioning.service.js": {
+          "sha256": "a8651795dd5ed1f4ee5abfe9b1609e5801e5b8948ffcd3e80ab852e817a33ed0",
+          "source": "whatsapp_crm/src/services/provisioning/business-provisioning.service.js"
+        },
+        "src/services/provisioning/deployment-store.js": {
+          "sha256": "6f7f7607efb635f7a380b78d29a306478f490816be0ee5d2e3a050d997f1983f",
+          "source": "whatsapp_crm/src/services/provisioning/deployment-store.js"
+        },
+        "src/services/provisioning/isolated-module-provisioner.js": {
+          "sha256": "b09542b897efa2f19f10c41f09f1647aad49566c0fd7131251b79328caca37f4",
+          "source": "whatsapp_crm/src/services/provisioning/isolated-module-provisioner.js"
+        },
+        "src/services/provisioning/module-deployment-client.js": {
+          "sha256": "298e9ea2e8321f71174ae7ac0c78480a0e51a769fd5eb48df77023dae701671e",
+          "source": "whatsapp_crm/src/services/provisioning/module-deployment-client.js"
+        },
+        "src/services/provisioning/workspace-route-client.js": {
+          "sha256": "370b4067cd842b43a1eb9fc0b4977cea015c897dbe0b98e07c5286ff997b3cf1",
+          "source": "whatsapp_crm/src/services/provisioning/workspace-route-client.js"
+        },
+        "src/services/push.service.js": {
+          "sha256": "d01b2d00c452f7ae2d545f5d25c31ab02dd048e00a56fcdc889915925fce8b2c",
+          "source": "whatsapp_crm/src/services/push.service.js"
+        },
+        "src/services/rag.service.js": {
+          "sha256": "970db1a3b34fc10c39d8e82adfef8d53b71466c076cbf44f56806b598b1634e3",
+          "source": "whatsapp_crm/src/services/rag.service.js"
+        },
+        "src/services/reranker.service.js": {
+          "sha256": "4f03dac75b75905594050c7e06fec905c94fc4816eedcd764c251b77578a8924",
+          "source": "whatsapp_crm/src/services/reranker.service.js"
+        },
+        "src/services/sales-brain.service.js": {
+          "sha256": "e0fb8f95f369734aa7aef8b982e1b3b76a227c17a7ea5b9ec73e8801e64a765d",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/sales-brain.service.js"
+        },
+        "src/services/sales-workspace.service.js": {
+          "sha256": "7dc1b8031dbbcb65390f201bed61fb4f016549bdb01ead1cbe9c9db92ca47e58",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/sales-workspace.service.js"
+        },
+        "src/services/sales-workspace.store.js": {
+          "sha256": "a9dbf870338c3d889f38ce574bc95ce2b7e4b089f8811e82d70638711a066940",
+          "source": "whatsapp_crm/src/services/sales-workspace.store.js"
+        },
+        "src/services/sequence.service.js": {
+          "sha256": "1f887ab9f6293996c4871e94ab61150bb95811ff4bbe2fb93b18f6d25be718ea",
+          "source": "whatsapp_crm/src/services/sequence.service.js"
+        },
+        "src/services/smart-triggers.service.js": {
+          "sha256": "4b7d62ce2996f640fe8cfb7e5846e6772ad618d5f495759bd3df87c89821e39e",
+          "source": "whatsapp_crm/src/services/smart-triggers.service.js"
+        },
+        "src/services/telegram-bot-compat.js": {
+          "sha256": "0a7970ec439494889d455c34dcf8aac77f6e7bb1ead786cdc24e949d16c2a6e7",
+          "source": "whatsapp_crm/src/services/telegram-bot-compat.js"
+        },
+        "src/services/telegram.service.js": {
+          "sha256": "fb65eaf7e9f36df993f35c3f93dc7505175dfa321f453157581541a02206ff85",
+          "source": "whatsapp_crm/src/services/telegram.service.js"
+        },
+        "src/services/telephony/call-reconciliation.js": {
+          "sha256": "d133273336504c1adf95c9149926357de2ff354aa88d2e5460d46f57b6db3a3f",
+          "source": "whatsapp_crm/src/services/telephony/call-reconciliation.js"
+        },
+        "src/services/telephony/call-result.js": {
+          "sha256": "3e5df0862500f874897989194a4d74faabfef0142dff811a24976d7f6a98b575",
+          "source": "whatsapp_crm/src/services/telephony/call-result.js"
+        },
+        "src/services/telephony/campaign-permission.js": {
+          "sha256": "a25f74b37876293ba35df6f962defb6155eafc6b126bf6662f1cd01faf3634c9",
+          "source": "whatsapp_crm/src/services/telephony/campaign-permission.js"
+        },
+        "src/services/telephony/campaigns.js": {
+          "sha256": "12147e24d9b0ce26a226ed36cbfc339a93ec950e93bb3c3bfd1583d7a7970b21",
+          "source": "whatsapp_crm/src/services/telephony/campaigns.js"
+        },
+        "src/services/telephony/credentials.js": {
+          "sha256": "bc4bf0cb0cdba8e6c62b4cdc2480a1474b4bf27bab1dcd241727e87a1ab5df59",
+          "source": "whatsapp_crm/src/services/telephony/credentials.js"
+        },
+        "src/services/telephony/diagnostics.js": {
+          "sha256": "da34c41f6a15625b9ae976848439703ec4d93eaf1d639384789706aaf9307699",
+          "source": "whatsapp_crm/src/services/telephony/diagnostics.js"
+        },
+        "src/services/telephony/existing.js": {
+          "sha256": "71db9ec41cd9b8668e1979df6f11a6aa6979485d025d3a17091444594e06cab3",
+          "source": "whatsapp_crm/src/services/telephony/existing.js"
+        },
+        "src/services/telephony/exolve-client.js": {
+          "sha256": "e6493d4f690208a9f9e6204f75e009101c332dfa7ad5d388aba1b5bbe5e23284",
+          "source": "whatsapp_crm/src/services/telephony/exolve-client.js"
+        },
+        "src/services/telephony/external-sip.js": {
+          "sha256": "e50511332f17ee85ca6b8106d30bdfef402b5a50be8aa45a8c301a1d8aa4a13a",
+          "source": "whatsapp_crm/src/services/telephony/external-sip.js"
+        },
+        "src/services/telephony/host-client.js": {
+          "sha256": "fbf98fd8e3b79296788d49123a13489fd1d2cbb234a3dacb970c3f1f320c00d1",
+          "source": "whatsapp_crm/src/services/telephony/host-client.js"
+        },
+        "src/services/telephony/policy.js": {
+          "sha256": "f207b31129fb6e6426fb7ba406eeaecb651c11d8c0cf721ea93b6357022bb005",
+          "source": "whatsapp_crm/src/services/telephony/policy.js"
+        },
+        "src/services/telephony/recovery.js": {
+          "sha256": "b99857d9c56dd3684d5d6aacaec8c7aa555d5c22b1205afdcd9d9830a5d08512",
+          "source": "whatsapp_crm/src/services/telephony/recovery.js"
+        },
+        "src/services/telephony/service.js": {
+          "sha256": "32f0b376f21ec2c48f1fc1d234dc2499ad6d79ff7b4545561fade9da4067508a",
+          "source": "whatsapp_crm/src/services/telephony/service.js"
+        },
+        "src/services/telephony/store.js": {
+          "sha256": "7fa109ddba70177aec7db1e8ee810f182c061d6994caa2da40df074c25abcc50",
+          "source": "whatsapp_crm/src/services/telephony/store.js"
+        },
+        "src/services/telephony/worker.js": {
+          "sha256": "78ab50a2c233d7c657843ae997824fb3e9cf858d08e28e608ea96a4c10077dda",
+          "source": "whatsapp_crm/src/services/telephony/worker.js"
+        },
+        "src/services/twenty/schema-manifest.json": {
+          "sha256": "2406b4ebb5d9577ee4cdc9ad642ac1847f94dee0e8fc880fe77185fc3fcbb1da",
+          "source": "whatsapp_crm/src/services/twenty/schema-manifest.json"
+        },
+        "src/services/twenty/twenty-client.js": {
+          "sha256": "e139e6f8f1fd7262f6bc6d81bba8977301cfe55f44a4cd3824484fcb2565d5b5",
+          "source": "whatsapp_crm/src/services/twenty/twenty-client.js"
+        },
+        "src/services/twenty/twenty-crypto.js": {
+          "sha256": "d5efb3dfa724ed3ec0bda5e67e4973d0e81c6955bfafe0f900dcc9fa9461e631",
+          "source": "whatsapp_crm/src/services/twenty/twenty-crypto.js"
+        },
+        "src/services/twenty/twenty-metadata.js": {
+          "sha256": "00f8450e0c40eb1e17d56df147b2d73b13ddd12f9563a2442431599e9f053aca",
+          "source": "whatsapp_crm/src/services/twenty/twenty-metadata.js"
+        },
+        "src/services/twenty/twenty-native-provisioning.js": {
+          "sha256": "2cc0fc5945570f4c4984674099ff65e336ed2ad9f56bdbc85296002f3961022b",
+          "source": "whatsapp_crm/src/services/twenty/twenty-native-provisioning.js"
+        },
+        "src/services/twenty/twenty-provisioner.service.js": {
+          "sha256": "21d14a4e1002549f5be572724b7e2b4956a1013e383eb122a7bcdf1a7af58db0",
+          "source": "whatsapp_crm/src/services/twenty/twenty-provisioner.service.js"
+        },
+        "src/services/twenty/twenty-store.service.js": {
+          "sha256": "e82954441d63a3cd639447092c558eb0b44149be683aa86b0f456d737e6d3727",
+          "source": "whatsapp_crm/src/services/twenty/twenty-store.service.js"
+        },
+        "src/services/twenty/twenty.service.js": {
+          "sha256": "c5c19442497dd83fc94009c772744fcc255d06ffedc120e0eb54ac2093a0b9c5",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/twenty/twenty.service.js"
+        },
+        "src/services/vk-bot-compat.js": {
+          "sha256": "42794615df79896bef72796cc0e1e076cfc4a2fce70ad6ea0078b909b8c84b48",
+          "source": "whatsapp_crm/src/services/vk-bot-compat.js"
+        },
+        "src/services/vk.service.js": {
+          "sha256": "168e3a25c084fb109736a32025c5e2f78822cd206b40ece5dc8f94e33b89502b",
+          "source": "whatsapp_crm/src/services/vk.service.js"
+        },
+        "src/services/voice-options.service.js": {
+          "sha256": "7828e73f1232a4820875f9b0d16f37984f2a37a62ecc0accbd00e050090a3189",
+          "source": "whatsapp_crm/src/services/voice-options.service.js"
+        },
+        "src/services/voice-provider.service.js": {
+          "sha256": "d91570ac94a61fff69913d7122bca1b0d27eb0b3bcdc1d21a32c272e08c0cc9d",
+          "source": "whatsapp_crm/src/services/voice-provider.service.js"
+        },
+        "src/services/voice-settings.service.js": {
+          "sha256": "6bc8f5214315dec4b2d5509c5a0027eca5b5312b8604b4bbba5984d6c2e5536a",
+          "source": "whatsapp_crm/src/services/voice-settings.service.js"
+        },
+        "src/services/voice-waiting.service.js": {
+          "sha256": "ca78861b06d87fb47262d27dcb682df2fdd0f251b0c9fee62b9370ab1aae121c",
+          "source": "whatsapp_crm/src/services/voice-waiting.service.js"
+        },
+        "src/services/whatsapp-attachments.service.js": {
+          "sha256": "b30c8ea7acc9e702d00003ecc826bb2acd5585932f448c9a869ae5f216f7a34e",
+          "source": "whatsapp_crm/src/services/whatsapp-attachments.service.js"
+        },
+        "src/services/whatsapp-connection.service.js": {
+          "sha256": "a7a8a22f59b0a5b3ce80388bfb9f6a652ff8e0c29e72698b07d23e0eb6881f69",
+          "source": "whatsapp_crm/src/services/whatsapp-connection.service.js"
+        },
+        "src/services/whatsapp-gateway.service.js": {
+          "sha256": "562b5a3c82a7b98f2bb50f7b49341b58a452602b2b71acfb64902a3b24244bf7",
+          "source": "whatsapp_crm/src/services/whatsapp-gateway.service.js"
+        },
+        "src/services/whatsapp-handoff.service.js": {
+          "sha256": "5c65923751f9f4a49b211e534e4665712779007a30cc8a0beef5c4bbd33c8229",
+          "source": "whatsapp_crm/src/services/whatsapp-handoff.service.js"
+        },
+        "src/services/whatsapp-media.service.js": {
+          "sha256": "d620bde31957766ec5e0e60c0a5bf04c0d8996bd42e33717b5096ec97ca71399",
+          "source": "whatsapp_crm/src/services/whatsapp-media.service.js"
+        },
+        "src/services/whatsapp-response-settings.service.js": {
+          "sha256": "ed215e28a24777279b7ebbd1baa8ce0bc32eb6eca7e75c4c72149bd62ca0ac6a",
+          "source": "whatsapp_crm/src/services/whatsapp-response-settings.service.js"
+        },
+        "src/services/whatsapp.service.js": {
+          "sha256": "c0621f2d68780e6620dfdbc918da0521fae65d98b2a954d15a3e294fb986d177",
+          "source": "deploy/production-snapshot-20261028/overlays/worker/src/services/whatsapp.service.js"
+        },
+        "src/services/yandex-voice-preview.service.js": {
+          "sha256": "2b0597f2160bdb9fec6759ca8298920e294b7c2f974bdd7450b02fea022a1509",
+          "source": "whatsapp_crm/src/services/yandex-voice-preview.service.js"
+        },
+        "src/services/yookassa.service.js": {
+          "sha256": "e2b96f5fb662793d2a433685500a2c25a8ab19e3c15c0a761b94e3e43b163591",
+          "source": "whatsapp_crm/src/services/yookassa.service.js"
+        },
+        "src/utils/constants.js": {
+          "sha256": "83cdefe411b9c08b29c687603ad9dd192ff48605fe608f9a46ac88d2b9c4fccb",
+          "source": "whatsapp_crm/src/utils/constants.js"
+        },
+        "src/utils/logger.js": {
+          "sha256": "1afe8509448387a3d27f2b04e6796600c8f4eb7ffeeb6fce2b000fed0e79b5e0",
+          "source": "whatsapp_crm/src/utils/logger.js"
+        },
+        "src/utils/rag-normalizer.js": {
+          "sha256": "227c9e363700e817ee5bdcc7872a302a73991e8e9b793bdd7e92f6a329d0e79d",
+          "source": "whatsapp_crm/src/utils/rag-normalizer.js"
+        },
+        "src/utils/sharp-mock.js": {
+          "sha256": "dbc084e74ce84ee8eca526d36db98620231de6b7f80a6cdeb9f055b03536c31b",
+          "source": "whatsapp_crm/src/utils/sharp-mock.js"
+        },
+        "src/utils/telegram-options.js": {
+          "sha256": "7962fcc93b5a7f68445096ea7b4462f4c24f1c2861a1d003fe01f29b13193b30",
+          "source": "whatsapp_crm/src/utils/telegram-options.js"
+        }
+      },
+      "runtimeConfigMetadata": {},
+      "notPresentInRuntime": [
+        "src/services/channel-product-context.service.js",
+        "src/services/integrations/amocrm-catalog.js",
+        "src/services/knowledge-preview-ai.service.js",
+        "src/services/telephony/README.md"
+      ],
+      "overlayFiles": 24
+    },
+    "engine": {
+      "image": "sha256:a209ee5ff2800c811f859d75dd513e4d17ac534ca04bff02e2c7010cdc085b01",
+      "running": true,
+      "restarts": 0,
+      "health": null,
+      "workdir": "/app",
+      "files": {
+        "main.py": {
+          "sha256": "89d8b0fe8ba404d8dfe43b22c8faade8ca86a2a2d5ee7e9729ce70a7f4933d7c",
+          "source": "main.py"
+        },
+        "src/__init__.py": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source": "src/__init__.py"
+        },
+        "src/ari_client.py": {
+          "sha256": "e6fd6658d156d2b7c9193a22f0f5cb057e67f2e037eaaf861d80d6e90127e14f",
+          "source": "src/ari_client.py"
+        },
+        "src/audio/__init__.py": {
+          "sha256": "960cb65adc0f5bd9c75b86ada94fd1bcf356e1a49d283093680a2d9607937925",
+          "source": "src/audio/__init__.py"
+        },
+        "src/audio/audiosocket_server.py": {
+          "sha256": "13772384f5eb9368fde622add7de75886f8a36facad1319cf46d1b7929e5a6d8",
+          "source": "src/audio/audiosocket_server.py"
+        },
+        "src/audio/outbound_ambience.py": {
+          "sha256": "44303b6b8afeaa35a4bf3fc2e7afb557376194140c05e21f40a4209e96aea7cf",
+          "source": "src/audio/outbound_ambience.py"
+        },
+        "src/audio/resampler.py": {
+          "sha256": "d5876ba9eee7b19b9fa5d0ca581e5bb6f3a7f0e2c30c860cb8d2916b5367afdf",
+          "source": "src/audio/resampler.py"
+        },
+        "src/aviation/__init__.py": {
+          "sha256": "0a523ce8d4c6effd00326c786a355dd6c0a2db3a482fd3a197e74cd14ce785e6",
+          "source": "src/aviation/__init__.py"
+        },
+        "src/aviation/atis.py": {
+          "sha256": "b36f5da7919290064e22bf58788e7359319e47503a4b263ede8fce775dfa824f",
+          "source": "src/aviation/atis.py"
+        },
+        "src/aviation/awc.py": {
+          "sha256": "c0e13fe942af98ee66ad3c49fee1ad5bc901ac5755d997526921cddf2f62d217",
+          "source": "src/aviation/awc.py"
+        },
+        "src/aviation/metar.py": {
+          "sha256": "a83d96f52e40daa635790152cfe233d6ab77220e00c5b67cea403ac21857e030",
+          "source": "src/aviation/metar.py"
+        },
+        "src/aviation/metno.py": {
+          "sha256": "2381571f59e1ac0c2fd7f4f68fa43452f1eb23f154a4471616f8f48fc4c4f324",
+          "source": "src/aviation/metno.py"
+        },
+        "src/aviation/speech.py": {
+          "sha256": "c6a589a0589fa50702889a28cf6cb70665fc7b86287a51b2e519651a71d972db",
+          "source": "src/aviation/speech.py"
+        },
+        "src/config.py": {
+          "sha256": "c3f924a5762154f3b6bf7523b694a5002a23e2033252f84d0429dc86168ad2c3",
+          "source": "src/config.py"
+        },
+        "src/config/__init__.py": {
+          "sha256": "65f12b60f0aee57accd7cff2b5e541099abeac6c956e3a2bf0667c19da748e6d",
+          "source": "src/config/__init__.py"
+        },
+        "src/config/defaults.py": {
+          "sha256": "0b5cbc1cb567fe831799a6b904d37ef1fd93801e700c36067c721794d66d4cd2",
+          "source": "src/config/defaults.py"
+        },
+        "src/config/loaders.py": {
+          "sha256": "7c941bafab8897f06be448b559f7c18158dbcf0ce1e142a69094e7bc0ae284e8",
+          "source": "src/config/loaders.py"
+        },
+        "src/config/normalization.py": {
+          "sha256": "8b8ae4baff6f05c6ec66045c0a927d5aa8644bb0753620a72885cdbb4f986531",
+          "source": "src/config/normalization.py"
+        },
+        "src/config/security.py": {
+          "sha256": "b39da58c815f01b1c52d2fc97e88d9c0c595f404475287c4e19b13ae416d3012",
+          "source": "src/config/security.py"
+        },
+        "src/core/__init__.py": {
+          "sha256": "a1a9f2f32eafc9adc682cd439f9997260bdc1c9fa1948c46beed4276502cec7c",
+          "source": "src/core/__init__.py"
+        },
+        "src/core/adaptive_streaming.py": {
+          "sha256": "8c63f2dc18d9ba43f025c48db0dc3fb3f19c60152792d3409b86198e44b93f66",
+          "source": "src/core/adaptive_streaming.py"
+        },
+        "src/core/audio_gating_manager.py": {
+          "sha256": "c628535e31b313ceb309620cd02e86d66a2629d0d46e09208e48719b1250b7e4",
+          "source": "src/core/audio_gating_manager.py"
+        },
+        "src/core/call_context_analyzer.py": {
+          "sha256": "6f4458bef9843389c3f4d05e643514caf527d44cf8f29cdbc672727b2a4543bb",
+          "source": "src/core/call_context_analyzer.py"
+        },
+        "src/core/call_history.py": {
+          "sha256": "2594a2109f9f90ec327c3fa9f24536a30eb917753bc3c6190e5650c402ae616d",
+          "source": "src/core/call_history.py"
+        },
+        "src/core/conversation_coordinator.py": {
+          "sha256": "19759609cb6968d0945fdadaac0229e1358909d6a3c0555b7b322209fa66fb09",
+          "source": "src/core/conversation_coordinator.py"
+        },
+        "src/core/managed_telephony.py": {
+          "sha256": "2473ee166362a062ab0c14398c32fe144f8697a3598a933539884d5e84b3d26f",
+          "source": "src/core/managed_telephony.py"
+        },
+        "src/core/models.py": {
+          "sha256": "f62b4b2eb2e63b965008229552d61b63161bbb94fe4e9af65629148455db3898",
+          "source": "src/core/models.py"
+        },
+        "src/core/onyx_action_client.py": {
+          "sha256": "4d89b667d4341f85c36899a3fefc25cc322d216d2addd4f07d805a3589d26144",
+          "source": "src/core/onyx_action_client.py"
+        },
+        "src/core/onyx_agent_runner.py": {
+          "sha256": "5ee9da708ccbf02e9b4302637a008d37d6fa5f35de38e836dd5dab6fbcef3ef8",
+          "source": "deploy/production-snapshot-20261028/overlays/engine/src/core/onyx_agent_runner.py"
+        },
+        "src/core/onyx_agents_config.py": {
+          "sha256": "03fbaf8955c70aa67cc819bc80aaf2c0bad755a740b6b4c006646a58aa77d28b",
+          "source": "src/core/onyx_agents_config.py"
+        },
+        "src/core/onyx_client.py": {
+          "sha256": "016b41b809bf49a77627f0c3910294900e7838433acb261cea1d2657ed89af49",
+          "source": "deploy/production-snapshot-20261028/overlays/engine/src/core/onyx_client.py"
+        },
+        "src/core/onyx_connector.py": {
+          "sha256": "e37e41bab0814684ce3cda8b5ba225f5f813e447f28acee35952c75f15ef2f45",
+          "source": "src/core/onyx_connector.py"
+        },
+        "src/core/onyx_customer_context.py": {
+          "sha256": "9d55dc066edca0be193722c8ce12a6fd8f34dff7d27ac1e40305e759afc79a1f",
+          "source": "src/core/onyx_customer_context.py"
+        },
+        "src/core/onyx_cutover_manager.py": {
+          "sha256": "0fc8229a90494d53f4f983a4efd7fc2e65b9c0bcc1b35c2045522370d47c47cd",
+          "source": "src/core/onyx_cutover_manager.py"
+        },
+        "src/core/onyx_db.py": {
+          "sha256": "9fb60c71056c5d7726827d449845eda4c5d881a44e8ebc63cd963f7713aeab67",
+          "source": "src/core/onyx_db.py"
+        },
+        "src/core/onyx_knowledge_runtime.py": {
+          "sha256": "982183dd096a518cdac2ee41ef49b18bc6598683db361cc2533415995ad7714d",
+          "source": "deploy/production-snapshot-20261028/overlays/engine/src/core/onyx_knowledge_runtime.py"
+        },
+        "src/core/onyx_mcp_bridge.py": {
+          "sha256": "ae80fc11fcbdaf9f3107429e96a65ff01963aa11383f38b7964dee8e10f8778f",
+          "source": "src/core/onyx_mcp_bridge.py"
+        },
+        "src/core/onyx_migration_runner.py": {
+          "sha256": "a8b9f91614431d267b1c9747bf9e1087900e82a78398dd5ea8255787da1b5685",
+          "source": "src/core/onyx_migration_runner.py"
+        },
+        "src/core/onyx_outbox_worker.py": {
+          "sha256": "5273e946e2c41c0908a73cc4d8e07aa267c3da0986faeea8834fc0645a4f8035",
+          "source": "deploy/production-snapshot-20261028/overlays/engine/src/core/onyx_outbox_worker.py"
+        },
+        "src/core/onyx_policy_gateway.py": {
+          "sha256": "af10c187d44f93b9f3333a01e93f5818cee1f1a1c5cef8ef945241f8b0bce9bb",
+          "source": "src/core/onyx_policy_gateway.py"
+        },
+        "src/core/onyx_resilience.py": {
+          "sha256": "5343bd37ffb985b6699ba1e4a5a53f838d686e6bdcd3be58fbbb94b0c3beb3df",
+          "source": "src/core/onyx_resilience.py"
+        },
+        "src/core/onyx_shadow_mode.py": {
+          "sha256": "8b0e818b374f8a57f97a34e206c37f52a984b74b15db852d9b983b6a5e66a280",
+          "source": "src/core/onyx_shadow_mode.py"
+        },
+        "src/core/onyx_tenant_service.py": {
+          "sha256": "87956c3a0be1f7fbd5b066c556d1e2ec6ffc69bccb2bc092ac95c337710d5a75",
+          "source": "src/core/onyx_tenant_service.py"
+        },
+        "src/core/onyx_worker_runtime.py": {
+          "sha256": "2cce0e73e4654cf6aedc350eb60c7f45d42612cb062c0b33b8566b808e7a8ca6",
+          "source": "src/core/onyx_worker_runtime.py"
+        },
+        "src/core/outbound_errors.py": {
+          "sha256": "de8ab46aa6a030e074a45d01bcbfe8e427fe42f00ff3a9dea597d3d2b208feb1",
+          "source": "src/core/outbound_errors.py"
+        },
+        "src/core/outbound_store.py": {
+          "sha256": "5f751164efaeb5824eeb5e10ff97b91a115206b148b1bc2b46d92b7414a6d747",
+          "source": "src/core/outbound_store.py"
+        },
+        "src/core/pilot_analytics.py": {
+          "sha256": "2da6a3eb8dc5980b0ee13ac95a11c3d698f79c45337f8e93e92b186e0826b557",
+          "source": "src/core/pilot_analytics.py"
+        },
+        "src/core/playback_manager.py": {
+          "sha256": "b6402c76188b4e146bf6d8eae1a360a254d27d193730f60140ff5edae94453c6",
+          "source": "src/core/playback_manager.py"
+        },
+        "src/core/post_call_delivery.py": {
+          "sha256": "fdb1ac07fc6f7829fc828826a3cf5c2dcc06a40a0f03c91ea6a32ad6af1ab592",
+          "source": "src/core/post_call_delivery.py"
+        },
+        "src/core/scenario_packs.py": {
+          "sha256": "6cd43f5ef1f58c817caab741d0a4a64de73d4fc487e30032dac9ef1a88ee471d",
+          "source": "src/core/scenario_packs.py"
+        },
+        "src/core/session_store.py": {
+          "sha256": "92d4f012f1a534b138f2d571f185c274843a7ee9a1aea95ff4f594d5a8c5ac28",
+          "source": "src/core/session_store.py"
+        },
+        "src/core/streaming_playback_manager.py": {
+          "sha256": "2283355b96bbbb1183d211ec709a9e771563378166fc0f49bba8831eff516f83",
+          "source": "src/core/streaming_playback_manager.py"
+        },
+        "src/core/transport_orchestrator.py": {
+          "sha256": "6ed5e9b191136f30aefec47e389f7d48c8b0df045b5b73590897b795500b8245",
+          "source": "src/core/transport_orchestrator.py"
+        },
+        "src/core/vad_manager.py": {
+          "sha256": "82e3659660f96512b342e11783c5bbe4e095990f757ee11ed0c150110c179f4d",
+          "source": "src/core/vad_manager.py"
+        },
+        "src/core/voice_channel_policy.py": {
+          "sha256": "44eadd69be504a3f1b23de5d1e1c4dad3bfbf2707d1378fae04c6f4c3bfed626",
+          "source": "src/core/voice_channel_policy.py"
+        },
+        "src/core/voice_closing.py": {
+          "sha256": "2c5e388eed118c1357738e3ef39d0145bb6e0dc271412ff235019d612c7109a3",
+          "source": "src/core/voice_closing.py"
+        },
+        "src/engine.py": {
+          "sha256": "539823be11425c64be25fa5a06cb164050a1e3792e46d80bb7a14097fc676838",
+          "source": "src/engine.py"
+        },
+        "src/engine_external_media.py": {
+          "sha256": "587d6996582e43bb288cf913f29d01bcd6aa59e4fd0d5fc7e49c696f6b06533e",
+          "source": "src/engine_external_media.py"
+        },
+        "src/logging_config.py": {
+          "sha256": "9b21f88870a99db1e7ebaf83ef86bbad937972a080a9e00b680748a55581b790",
+          "source": "src/logging_config.py"
+        },
+        "src/mcp/__init__.py": {
+          "sha256": "086898ca57fbbfc269d44fba3bd5965576ef40fd3f9eb63e4c7c0ff2eedb22ec",
+          "source": "src/mcp/__init__.py"
+        },
+        "src/mcp/errors.py": {
+          "sha256": "1444e77bec7d69cffbccb75d998fc8204ea892d1f2bcd5b69dde14cda5e76ec9",
+          "source": "src/mcp/errors.py"
+        },
+        "src/mcp/manager.py": {
+          "sha256": "1cc8d815ddb67d5d73c60d0e3e84ad92bb805b02769d1a43d42ace042286ef2e",
+          "source": "src/mcp/manager.py"
+        },
+        "src/mcp/naming.py": {
+          "sha256": "cf5f3e1d9ccb628cd4beca9d9804d112fb60f81971712903265ae862fa296ca4",
+          "source": "src/mcp/naming.py"
+        },
+        "src/mcp/stdio_client.py": {
+          "sha256": "354757a2c00d0ec3569cabdbf0246fc6b5e1a1cd06d579d00c5ff58bf564ceac",
+          "source": "src/mcp/stdio_client.py"
+        },
+        "src/mcp/stdio_framing.py": {
+          "sha256": "bd194a932aa3200dd5c8622e25caefaf87aec69118215d09a1b3eca6bef887c3",
+          "source": "src/mcp/stdio_framing.py"
+        },
+        "src/mcp_servers/__init__.py": {
+          "sha256": "e26b207ff1dc04f68c77e1cd456eaf4be4e9e61e2a08b44fc3d063b7dc52c850",
+          "source": "src/mcp_servers/__init__.py"
+        },
+        "src/mcp_servers/aviation_atis_server.py": {
+          "sha256": "5f867a37d640d53cd7fa859682f0c1e9be5797284258773b104178d0434c63c8",
+          "source": "src/mcp_servers/aviation_atis_server.py"
+        },
+        "src/mcp_servers/bnovo_pms_mcp_server.py": {
+          "sha256": "e4d0caa8a029e1b6060b6692dc74351cfdcf83dabd28aca257caa5a7587c8c1b",
+          "source": "src/mcp_servers/bnovo_pms_mcp_server.py"
+        },
+        "src/mcp_servers/business_knowledge_mcp_server.py": {
+          "sha256": "4d4b00442f70e8421dc93f9d7a4af8b8012e74b272c39f90155529acf9148349",
+          "source": "src/mcp_servers/business_knowledge_mcp_server.py"
+        },
+        "src/mcp_servers/hotel_demo_mcp_server.py": {
+          "sha256": "955ae815bcb967cb7d76c8bb1cf9376022c52bebe4c22f3726c37c4aa5f47a08",
+          "source": "src/mcp_servers/hotel_demo_mcp_server.py"
+        },
+        "src/mcp_servers/sales_brain_mcp_server.py": {
+          "sha256": "45fdf72eb3b9f711b30c3acb6c17de7dec47d7066895c917f0d878c06bed8052",
+          "source": "src/mcp_servers/sales_brain_mcp_server.py"
+        },
+        "src/mcp_servers/weather_mcp_server.py": {
+          "sha256": "79269380ce01412457afcf23896642c532e1439e8814976c9c1e8c6d56b6f36d",
+          "source": "src/mcp_servers/weather_mcp_server.py"
+        },
+        "src/mcp_servers/whatsapp_crm_mcp_server.py": {
+          "sha256": "f3b1ccf585c41978f3efb3f0380b293ad4606c040f0143b78b00033b8a56e57f",
+          "source": "src/mcp_servers/whatsapp_crm_mcp_server.py"
+        },
+        "src/pipelines/__init__.py": {
+          "sha256": "f8a0937acc776cc2af53f92a33e7f356ab213a797b478ea689e095a58160c7a3",
+          "source": "src/pipelines/__init__.py"
+        },
+        "src/pipelines/azure.py": {
+          "sha256": "67d6ee2f1c56b403f9bbe35985ae33d13512d94e76be74b1ff4ed6fd992118d2",
+          "source": "src/pipelines/azure.py"
+        },
+        "src/pipelines/base.py": {
+          "sha256": "eac7da1927066d2b47d9e489fcac69b48cfd0f6df74155ca0853821fb36f4051",
+          "source": "src/pipelines/base.py"
+        },
+        "src/pipelines/deepgram.py": {
+          "sha256": "c1930d34b6b61042b847155208bc4ebd0a5eac6ce9634ca539da27d093b7ba9b",
+          "source": "src/pipelines/deepgram.py"
+        },
+        "src/pipelines/deepgram_flux.py": {
+          "sha256": "0e6d1e118a80773d2b4919594b611fcd15dc1757c0a4b5ddb7f82c17c299793b",
+          "source": "src/pipelines/deepgram_flux.py"
+        },
+        "src/pipelines/elevenlabs.py": {
+          "sha256": "a1dc4ab9881430123f637d6c9f2b7c9640c051de2807c97b484f4dab7838b344",
+          "source": "src/pipelines/elevenlabs.py"
+        },
+        "src/pipelines/google.py": {
+          "sha256": "c15d1f73fdeea653a73c5f12d192455c31def5c407188d752965aec543780697",
+          "source": "src/pipelines/google.py"
+        },
+        "src/pipelines/groq.py": {
+          "sha256": "cf10b6b281044befdda2cbf8f9611ce332cd56cd4f8480bdb949ce6b7b66b80f",
+          "source": "src/pipelines/groq.py"
+        },
+        "src/pipelines/local.py": {
+          "sha256": "5a00120134a793b5b43da0bb1d8787be26165dbe93093437321b15b535979419",
+          "source": "src/pipelines/local.py"
+        },
+        "src/pipelines/minimax.py": {
+          "sha256": "828f3a3ad1c8ade94ba0d39099b192fb1af8f75a4ca1249805ebc7cddd118464",
+          "source": "src/pipelines/minimax.py"
+        },
+        "src/pipelines/ollama.py": {
+          "sha256": "b2850b61cbef55ea7267c01f2b915d9744bcfca576ec7d3b81157147a1d90bd3",
+          "source": "src/pipelines/ollama.py"
+        },
+        "src/pipelines/openai.py": {
+          "sha256": "3a1de95495d4231d0778c296257bc688424b849cf53d2dc859a6123db4c37212",
+          "source": "src/pipelines/openai.py"
+        },
+        "src/pipelines/orchestrator.py": {
+          "sha256": "09a79d03e57b11f9263ea7da34a2370c0811558b634321fb33202c167dc0a295",
+          "source": "src/pipelines/orchestrator.py"
+        },
+        "src/pipelines/telnyx.py": {
+          "sha256": "8878a514e7eaa33818b601a26a249aa90b55e17372d355ca219471e8cdbcbaef",
+          "source": "src/pipelines/telnyx.py"
+        },
+        "src/providers/__init__.py": {
+          "sha256": "b30882d72641315fb2390891f1896cbad58fc003682086629bda2a94782774da",
+          "source": "src/providers/__init__.py"
+        },
+        "src/providers/base.py": {
+          "sha256": "187970929e46f6aa89b540eba16ee6aff63dd492dce442117aee8aaa55bbf634",
+          "source": "src/providers/base.py"
+        },
+        "src/providers/deepgram.py": {
+          "sha256": "80c30e3e2f4c3c6d054fcae937479b16ad0af56e22ecb407daa3383f18503edb",
+          "source": "src/providers/deepgram.py"
+        },
+        "src/providers/elevenlabs_agent.py": {
+          "sha256": "608af4e4f67f6551b30750e84c432734880ba99af14c05dc0fc1a5e480cb4954",
+          "source": "src/providers/elevenlabs_agent.py"
+        },
+        "src/providers/elevenlabs_config.py": {
+          "sha256": "4695de858b15357dcf26db92ef543b1d9d575941eb6cbdba03dc4a2faba5bfbc",
+          "source": "src/providers/elevenlabs_config.py"
+        },
+        "src/providers/google_live.py": {
+          "sha256": "b65bea00760741ad44a238c91b61fd9a34c34bea08b78353985facf331b16d25",
+          "source": "src/providers/google_live.py"
+        },
+        "src/providers/local.py": {
+          "sha256": "adb92f15e90b07824999188d19fa4a708328064f20cc01dfc42eabb10057aa90",
+          "source": "src/providers/local.py"
+        },
+        "src/providers/neuro_gemini.py": {
+          "sha256": "ac695794b1df7436d35cbe0bfada99b4bd3edebb252568c42bf106593a29be57",
+          "source": "src/providers/neuro_gemini.py"
+        },
+        "src/providers/neuro_speech.py": {
+          "sha256": "5626a1304e25d4f4373a1be741dd992c8b90bc6e22c2942cf8a6b9e007931715",
+          "source": "src/providers/neuro_speech.py"
+        },
+        "src/providers/neuro_vertex.py": {
+          "sha256": "6a734ad764888304dba3323f34e83cfd5d74cd935a42bb09f79ae837b609542c",
+          "source": "src/providers/neuro_vertex.py"
+        },
+        "src/providers/openai_realtime.py": {
+          "sha256": "66ea42073c8062cd89085a672acfa0ff8ec237df6557badbfbfc064a59c8d26d",
+          "source": "src/providers/openai_realtime.py"
+        },
+        "src/providers/yandex_fast.py": {
+          "sha256": "939b085b2c9f03da5376ce269cd01fd0cb4e3e908bb7f84a8b97ce008394dc98",
+          "source": "src/providers/yandex_fast.py"
+        },
+        "src/providers/yandex_realtime.py": {
+          "sha256": "cc18839260a34769f7d20736b3f1ddd4455d390b13b258de5a91d3de55c3d6d8",
+          "source": "src/providers/yandex_realtime.py"
+        },
+        "src/rtp_server.py": {
+          "sha256": "b45f242c41696a751cfa1bde43f5e4f0e9930208aa7fcdd2f55b15f4a483fe71",
+          "source": "src/rtp_server.py"
+        },
+        "src/tools/__init__.py": {
+          "sha256": "8cecc178038cf82ca3eb154bd6a1fe468fa6cdce089183def660490943d18b0d",
+          "source": "src/tools/__init__.py"
+        },
+        "src/tools/adapters/__init__.py": {
+          "sha256": "87f61d8c62f4abb1652647c3dfce671d9292802f696a018cd1d45136d8675d8a",
+          "source": "src/tools/adapters/__init__.py"
+        },
+        "src/tools/adapters/deepgram.py": {
+          "sha256": "4fa17856c05d5b65e2d67f177806f2bde1d5b47c2fdc1dc99ce45103da6f4589",
+          "source": "src/tools/adapters/deepgram.py"
+        },
+        "src/tools/adapters/elevenlabs.py": {
+          "sha256": "79cbfcd7e4bca4a03cf7cd0ace8917cd66ab663cf8e19523a1dd24b73a52f3f9",
+          "source": "src/tools/adapters/elevenlabs.py"
+        },
+        "src/tools/adapters/google.py": {
+          "sha256": "2fd4cbff9fe291307f1318359b801a51af61d5a29060de7697456d36191d017d",
+          "source": "src/tools/adapters/google.py"
+        },
+        "src/tools/adapters/openai.py": {
+          "sha256": "160bec0a6b40bca71fdcece3b63dbffb72f102a9510b7fbf0d147afb5bd31c62",
+          "source": "src/tools/adapters/openai.py"
+        },
+        "src/tools/adapters/sanitize.py": {
+          "sha256": "85acca7c68d4f47bcbedeaf1e3fd4f399040ca7e6940d1fade11fc1e15ec0b89",
+          "source": "src/tools/adapters/sanitize.py"
+        },
+        "src/tools/base.py": {
+          "sha256": "a6064656567b1dc74ebba50b39fe70d084ccf8ca601dd6ddfa7008deb70c2a9f",
+          "source": "src/tools/base.py"
+        },
+        "src/tools/business/__init__.py": {
+          "sha256": "d0782c0585ab741677bf062e80516ea0f1438f2f6e3d8a75c82be5e3e2f906a9",
+          "source": "src/tools/business/__init__.py"
+        },
+        "src/tools/business/email_dispatcher.py": {
+          "sha256": "d9887823e93df4aa168cc7102ba8087b8f1de8c888c024223d7d5b438677e4f3",
+          "source": "src/tools/business/email_dispatcher.py"
+        },
+        "src/tools/business/email_summary.py": {
+          "sha256": "b3da20d0d6c673787ed5ddd75725dbe20fdf6133cef22f5f54764ccb0ee7480e",
+          "source": "src/tools/business/email_summary.py"
+        },
+        "src/tools/business/email_templates.py": {
+          "sha256": "aa2cdc2d609a2bc63dd09e0c28d868940857f722c7f2c3e1bf282cef76e69dd1",
+          "source": "src/tools/business/email_templates.py"
+        },
+        "src/tools/business/gcal_tool.py": {
+          "sha256": "5a4d130d1c96969a037f82184abc3470bedc8b5899b849f3372c36b8b9a844a6",
+          "source": "src/tools/business/gcal_tool.py"
+        },
+        "src/tools/business/gcalendar.py": {
+          "sha256": "8c2b4e9622f433930e1f6b36f11d80861061a46d51a6dbc411b264c924b9788c",
+          "source": "src/tools/business/gcalendar.py"
+        },
+        "src/tools/business/request_transcript.py": {
+          "sha256": "154f7d30e097373eb5ab536df240c700e1d55f998dae0f00e32b10179476bd4d",
+          "source": "src/tools/business/request_transcript.py"
+        },
+        "src/tools/business/resend_client.py": {
+          "sha256": "6da3e55d4136def8470b0bd57de780249468e4b196c9e66e963d203175489403",
+          "source": "src/tools/business/resend_client.py"
+        },
+        "src/tools/business/smtp_client.py": {
+          "sha256": "873b63108060bce4b8e8d4fa56d36c79b10d0a71572503f87ddae8a951c25b42",
+          "source": "src/tools/business/smtp_client.py"
+        },
+        "src/tools/business/template_renderer.py": {
+          "sha256": "f7c1179b037aed2ccc25a3afc12af10d88a45474c225df4b3e0d2efc17c96fc6",
+          "source": "src/tools/business/template_renderer.py"
+        },
+        "src/tools/context.py": {
+          "sha256": "3e3db6a91c82a191dc76a394a552f5ac0a6a26e9e7e2917fc2d5f3399ae60305",
+          "source": "src/tools/context.py"
+        },
+        "src/tools/http/__init__.py": {
+          "sha256": "2121307fd976bde6f5377e6b1f638ed6b6dcd97379cb16828d2871ace742fcad",
+          "source": "src/tools/http/__init__.py"
+        },
+        "src/tools/http/debug_trace.py": {
+          "sha256": "e6b90af2c096b062974f4d70d74de68c0c0b56eda895a3bb8c1508dc57c257b3",
+          "source": "src/tools/http/debug_trace.py"
+        },
+        "src/tools/http/generic_lookup.py": {
+          "sha256": "1e73478d596d2411c638ac8a30ee42606823c145f19ad8f5a5c451b17d778d15",
+          "source": "src/tools/http/generic_lookup.py"
+        },
+        "src/tools/http/generic_webhook.py": {
+          "sha256": "999e2e2f59187bdc65199c58d20ce347fe130357f000f53f82b768340f004e6e",
+          "source": "src/tools/http/generic_webhook.py"
+        },
+        "src/tools/http/in_call_lookup.py": {
+          "sha256": "c3baa531a4670dd5763c4af948192e73e45917ce9ad314581d3961ba90cd99a6",
+          "source": "src/tools/http/in_call_lookup.py"
+        },
+        "src/tools/http/path_utils.py": {
+          "sha256": "dddcb43b343a1944d17787172953f2e7cce286d091cd48f7045463ce62cd06e6",
+          "source": "src/tools/http/path_utils.py"
+        },
+        "src/tools/mcp_tool.py": {
+          "sha256": "3894b4b4062eb64662bf2f1707fb394d83a41cb61731ca1c49570b728c75209f",
+          "source": "src/tools/mcp_tool.py"
+        },
+        "src/tools/parser.py": {
+          "sha256": "5294128ffeee382fd1b62c5d349c74b52e61b55b878283f249aeac3cc5b76132",
+          "source": "src/tools/parser.py"
+        },
+        "src/tools/registry.py": {
+          "sha256": "8768ecee6b8f0528658fc403b22838ebaded2fcb949e203cc6ba4df2be6a295b",
+          "source": "src/tools/registry.py"
+        },
+        "src/tools/runtime_guidance.py": {
+          "sha256": "90cf0b5e9d30969a067aa1e547a742c3a1f00cdb282f693d78109410dd492c9c",
+          "source": "src/tools/runtime_guidance.py"
+        },
+        "src/tools/telephony/__init__.py": {
+          "sha256": "f1e09f1aa14000973c47e747b566385f310108cba21ac27f8eaaca3fdbd2222c",
+          "source": "src/tools/telephony/__init__.py"
+        },
+        "src/tools/telephony/attended_transfer.py": {
+          "sha256": "7f7ab288ff0a10222e1e3692e4bec71b46c93b80d59321ae242adad1ae902921",
+          "source": "src/tools/telephony/attended_transfer.py"
+        },
+        "src/tools/telephony/cancel_transfer.py": {
+          "sha256": "3f55232f0b234b064cd7abec0a5eb6a22c0652e86cc4af77b6686824b1486722",
+          "source": "src/tools/telephony/cancel_transfer.py"
+        },
+        "src/tools/telephony/check_extension_status.py": {
+          "sha256": "a2cc82ae44f99a65d01bc9d1fec51226702a421e7d72b21dd11cec694e27d638",
+          "source": "src/tools/telephony/check_extension_status.py"
+        },
+        "src/tools/telephony/hangup.py": {
+          "sha256": "6246d3f16125bafa7f12f34606d5c3e12d65ce659e1ceb221733b5ae1d1f70b7",
+          "source": "src/tools/telephony/hangup.py"
+        },
+        "src/tools/telephony/hangup_policy.py": {
+          "sha256": "5c6c25a1842135a736c1df913553d3c7f3cf9232790ba0feeb2f3a0f42b6adf6",
+          "source": "src/tools/telephony/hangup_policy.py"
+        },
+        "src/tools/telephony/live_agent_transfer.py": {
+          "sha256": "3d98a1814f0c1950d2fcffea0c12a84d0dad8dc091ee7fa1f38cb817352959f0",
+          "source": "src/tools/telephony/live_agent_transfer.py"
+        },
+        "src/tools/telephony/queue_transfer.py": {
+          "sha256": "f320da8f8b74b47a7cd89ccf1d78538454f415c26cff7fb34c94a2ef5239db6f",
+          "source": "src/tools/telephony/queue_transfer.py"
+        },
+        "src/tools/telephony/transfer.py": {
+          "sha256": "043c244c6b9a1a6a9e93a6a9daff2522bb0e3bf6c335b1598dfdee677ac72129",
+          "source": "src/tools/telephony/transfer.py"
+        },
+        "src/tools/telephony/unified_transfer.py": {
+          "sha256": "3fc1871e1650d23fcab36df52dcdcd0512016c81633cee261b405cabca42dd72",
+          "source": "src/tools/telephony/unified_transfer.py"
+        },
+        "src/tools/telephony/voicemail.py": {
+          "sha256": "aeef9cb6c37e99255135c65d69216c0613bea591f49a80123c2fc813f00675f1",
+          "source": "src/tools/telephony/voicemail.py"
+        },
+        "src/utils/audio_capture.py": {
+          "sha256": "6017c6fea571859ae18accd11ea5821df6f9e16375d55886f89c48b95c364d0b",
+          "source": "src/utils/audio_capture.py"
+        },
+        "src/utils/email_validator.py": {
+          "sha256": "c412cefdb84351dbf44190987ef42182997870b1d14f3767f5e4085987f359eb",
+          "source": "src/utils/email_validator.py"
+        }
+      },
+      "runtimeConfigMetadata": {
+        "config/ai-agent.example.yaml": {
+          "runtimeSha256": "4b92b1bf4a3dd9c8e4bac4aa8631853ca1e292ede628d0290d88f55f3b08f874",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-deepgram.yaml": {
+          "runtimeSha256": "23ae81048f18cf2a0f77f5d663095f29d2b8ec1a1fd5f02f446752ab8a469ab1",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-elevenlabs.yaml": {
+          "runtimeSha256": "77ca2bce1860f531ad1ababdfba8506c0e900fce3197f7655fb13b492fd5266d",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-google-live.yaml": {
+          "runtimeSha256": "6facf121e50ab1071849fc923dd9de235c6040461fe2ec0f976369939ba18907",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-local-gpu.yaml": {
+          "runtimeSha256": "b3e689c6857ec5436a49593d23857744495142c9920d3beb4f340bfc05a06155",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-local-hybrid.yaml": {
+          "runtimeSha256": "1a790f20c2d95b740e84722faf386232b072b5cefe231ea8f0ce18457b65a6b5",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-openai.yaml": {
+          "runtimeSha256": "df585b83c976188277f11e92126daaddeabbe837b31458d6a6da4ec1dc2913b1",
+          "contentsPublished": false
+        },
+        "config/ai-agent.golden-telnyx.yaml": {
+          "runtimeSha256": "4c61481e5aa10b14ce3f1b27fff6e8bd2e8a06ebcbf3c49efbde41283ef59041",
+          "contentsPublished": false
+        },
+        "config/ai-agent.yaml": {
+          "runtimeSha256": "54544e23deb1ac4f200518b12dda60ba1a851f91ca61371b2f2b2961674e6d74",
+          "contentsPublished": false
+        },
+        "config/aviation_atis.example.yaml": {
+          "runtimeSha256": "f03adb17a059905d35dd2a13b63e7711531f0ce0c261981efb473449bd9dcad3",
+          "contentsPublished": false
+        },
+        "config/aviation_atis.yaml": {
+          "runtimeSha256": "0b6d491239c172aa953a13fb0dfe68dc14d00b34e66188d86a13ba937789550d",
+          "contentsPublished": false
+        },
+        "config/contexts/demo-project-expert.yaml": {
+          "runtimeSha256": "2271f51cddf80b32598c15e43d0996be4da1c574a1fe8853c5fe56dc3ef235d3",
+          "contentsPublished": false
+        },
+        "config/platforms.yaml": {
+          "runtimeSha256": "c0df973999686d2209602f1de7cb20b062ea486d8b9e837acefd5773060c3615",
+          "contentsPublished": false
+        },
+        "config/scenarios/hotel.yaml": {
+          "runtimeSha256": "254986944c219637a90fefe7bc319ead8564db36300713af59ef9a71ab257028",
+          "contentsPublished": false
+        }
+      },
+      "notPresentInRuntime": [
+        "config/asterisk/ava-managed-extensions.conf",
+        "config/asterisk/ava-managed-pjsip.conf",
+        "config/systemd/ava-telephony-agent.service",
+        "config/systemd/telephony-agent.env.example",
+        "config/systemd/telephony-api.env.example",
+        "config/systemd/telephony-engine.env.example",
+        "config/systemd/telephony-worker.env.example",
+        "requirements.txt",
+        "src/core/onyx_native_runtime_client.py",
+        "src/core/onyx_native_runtime_config.py",
+        "src/models/cache.py"
+      ],
+      "overlayFiles": 4
+    },
+    "admin": {
+      "image": "sha256:ad00c820bdb419de026154b513e09e65ea83017960567c53f35b599c649599f3",
+      "running": true,
+      "restarts": 0,
+      "health": null,
+      "workdir": "/app",
+      "files": {
+        "Dockerfile": {
+          "sha256": "a250aa79c1d99b23afeacfd4e1beaca7f377141dd53c40ce45a5fb54a43e5dde",
+          "source": "admin_ui/backend/Dockerfile"
+        },
+        "api/__init__.py": {
+          "sha256": "1da12f05983a8f0dd50d04bf8243b56901c548fd9207c3be46e7e37f06e067f3",
+          "source": "admin_ui/backend/api/__init__.py"
+        },
+        "api/calls.py": {
+          "sha256": "b8ba762eb4d8173331bdfb7cb58c84ba2ebd117e64f642844e42db70bfa2a5a1",
+          "source": "admin_ui/backend/api/calls.py"
+        },
+        "api/config.py": {
+          "sha256": "e4a668fc7bb9f390d3c25bcdc9391ab705fe1f358623cc566ce8456e0732f8a9",
+          "source": "admin_ui/backend/api/config.py"
+        },
+        "api/docs.py": {
+          "sha256": "74f945c517fcbfb9b7772e841b6152454bc31346dacdb5a9901e8cf70018a6a5",
+          "source": "admin_ui/backend/api/docs.py"
+        },
+        "api/followups.py": {
+          "sha256": "fa827be67404d35e51b314c856e35f7528c9d2854128078c0bce8ff8c802454b",
+          "source": "admin_ui/backend/api/followups.py"
+        },
+        "api/hotels.py": {
+          "sha256": "651777d72205410ab17a0593b627cd1fd9f50b158fac2f940e42e34ef0c4c8fa",
+          "source": "admin_ui/backend/api/hotels.py"
+        },
+        "api/local_ai.py": {
+          "sha256": "efe5a9af14eb3e91191148cb3ddb61863bacb357b770f930adf41265be0d9333",
+          "source": "admin_ui/backend/api/local_ai.py"
+        },
+        "api/log_events.py": {
+          "sha256": "6eab11432879f1aad60c384091e72570715501da690def6c237bb669d9091b10",
+          "source": "admin_ui/backend/api/log_events.py"
+        },
+        "api/logs.py": {
+          "sha256": "071374a754cd240a13a5d471149bf09851f5cd22ac52cb00479f945c546ba8dc",
+          "source": "admin_ui/backend/api/logs.py"
+        },
+        "api/mcp.py": {
+          "sha256": "4a7bfe63dd7b2d6f83c5c477e6a7b051879fdc1b9bf20bc0887d330ad7ae56ba",
+          "source": "admin_ui/backend/api/mcp.py"
+        },
+        "api/models_catalog.py": {
+          "sha256": "071329f2b7e68c0acc2e4d7319c64b9b89108745480b3fe255fd15c19623764a",
+          "source": "admin_ui/backend/api/models_catalog.py"
+        },
+        "api/ollama.py": {
+          "sha256": "9863959ce6940da92f908c751c4719e688838dc96dafe4e85ae7179350c26f2e",
+          "source": "admin_ui/backend/api/ollama.py"
+        },
+        "api/onyx.py": {
+          "sha256": "53d1367d004d4d866777996c4c51e91a788aaed140bb1a3645eae57b04d373d6",
+          "source": "deploy/production-snapshot-20261028/overlays/admin/api/onyx.py"
+        },
+        "api/onyx_mcp.py": {
+          "sha256": "46b6a6483746500894d5f8433e72047b84d4dde781b1cbdfb010ca8e95e0dafc",
+          "source": "admin_ui/backend/api/onyx_mcp.py"
+        },
+        "api/onyx_runtime.py": {
+          "sha256": "a4e996c2e7051e585a98fd00642d7a5afa3d73d8665732d0a33ed57855d73dfd",
+          "source": "admin_ui/backend/api/onyx_runtime.py"
+        },
+        "api/outbound.py": {
+          "sha256": "ae61968ac6abcb550b32fb3bc80b442a1d89edbca44324cd7cd1bf5faede51da",
+          "source": "admin_ui/backend/api/outbound.py"
+        },
+        "api/pilot_analytics.py": {
+          "sha256": "9338a15a009da3bf91241a30552b25f81b971994d9d378bca202e8b685524ef6",
+          "source": "admin_ui/backend/api/pilot_analytics.py"
+        },
+        "api/rebuild_jobs.py": {
+          "sha256": "b80c09dce28ec4db45b9dbce02f85ed3cc9e0712e1a1c26e44326411d8211bc0",
+          "source": "admin_ui/backend/api/rebuild_jobs.py"
+        },
+        "api/system.py": {
+          "sha256": "3fd487301491213b1cf89eb43da0d90dbdb6d8d0d8fc8f8bc3f06b5822d65edb",
+          "source": "admin_ui/backend/api/system.py"
+        },
+        "api/tasks.py": {
+          "sha256": "2d946a9b0f1db43d5ed68a77fcefce068fcb70e3138d995bf5418952476efd1b",
+          "source": "admin_ui/backend/api/tasks.py"
+        },
+        "api/tools.py": {
+          "sha256": "66f55603a30b33b2b4ee421d85a42ce50f3bfb7099d1b3f6f2fb8b72bc09d520",
+          "source": "admin_ui/backend/api/tools.py"
+        },
+        "api/wizard.py": {
+          "sha256": "22950955aa85318d24a6de0a164d1573346593ed47cc995c73c4fc4db11483ac",
+          "source": "admin_ui/backend/api/wizard.py"
+        },
+        "auth.py": {
+          "sha256": "2f65b3afdb7e0539686f4dd5a423270197808cec9a64901a149ce28e996e6251",
+          "source": "admin_ui/backend/auth.py"
+        },
+        "main.py": {
+          "sha256": "2e58576d21a23defae1ed9cb972405a9ea3aab2297cb1f45025fed8f6eb01a0d",
+          "source": "admin_ui/backend/main.py"
+        },
+        "requirements.txt": {
+          "sha256": "db60f321248ebb964f87bb8a4de9b7aaf4bb3c5eb456b2450be3563d41bfe582",
+          "source": "admin_ui/backend/requirements.txt"
+        },
+        "services/__init__.py": {
+          "sha256": "22f0ae0bfa79b3c987c75589a291987703858902da8325e6fad08c8f2705f14f",
+          "source": "admin_ui/backend/services/__init__.py"
+        },
+        "services/fs.py": {
+          "sha256": "b66edcbce8ff1c3440216c37176855b3dc8a95315e7dfe928510660d35a4b038",
+          "source": "admin_ui/backend/services/fs.py"
+        },
+        "settings.py": {
+          "sha256": "c08b449a9abdcb7b913735c5d0fbcfb10755951b66e2f78f4771f804faf17848",
+          "source": "admin_ui/backend/settings.py"
+        },
+        "tests/test_admin_ui_auth_secret.py": {
+          "sha256": "7eb713e7141f13d7b12dc7065b008531704c0b831615f4ec7c35eab7da64ad7b",
+          "source": "admin_ui/backend/tests/test_admin_ui_auth_secret.py"
+        },
+        "tests/test_ari_status_parsing_security.py": {
+          "sha256": "e1324d00052383c6fc64c7feaf9b08088ac41eb3bf11f2cb940c621978767c61",
+          "source": "admin_ui/backend/tests/test_ari_status_parsing_security.py"
+        },
+        "tests/test_hotel_knowledge_base_proxy.py": {
+          "sha256": "7a5383df60576289126b3cc1a7d637fe1f575e4ac759dd1df1a6c8e7236668f6",
+          "source": "admin_ui/backend/tests/test_hotel_knowledge_base_proxy.py"
+        },
+        "tests/test_http_tool_test_security.py": {
+          "sha256": "a9e4dabd708efcf264ac4b0c075b2433301120418fac42febb4dd46d6f625078",
+          "source": "admin_ui/backend/tests/test_http_tool_test_security.py"
+        },
+        "tests/test_local_ai_switch_mapping.py": {
+          "sha256": "c2e072cbabd76ee84859490c98f7e6cc073f37485e0c9ec3746e2d5ecb590c0a",
+          "source": "admin_ui/backend/tests/test_local_ai_switch_mapping.py"
+        },
+        "tests/test_onyx_action_api.py": {
+          "sha256": "2937a01e6d1d6e3ed42a49f456285c99f1b065889edabf7a20eb06d970d64528",
+          "source": "admin_ui/backend/tests/test_onyx_action_api.py"
+        },
+        "tests/test_project_version_detection.py": {
+          "sha256": "d6e7077d14845b489da840f9f4198df7b751a949dd71bfe2de573f2437560a8f",
+          "source": "admin_ui/backend/tests/test_project_version_detection.py"
+        },
+        "uvicorn_log_config.yaml": {
+          "sha256": "dfba87538df84f4ebbee73deadd424750dbc49759272aa69950d196bf9ad28ac",
+          "source": "admin_ui/backend/uvicorn_log_config.yaml"
+        }
+      },
+      "runtimeConfigMetadata": {},
+      "notPresentInRuntime": [],
+      "overlayFiles": 1
+    }
+  },
+  "excluded": [
+    "environment values and credential files",
+    "databases and customer documents",
+    "recordings and customer screenshots",
+    "private Git history",
+    "historical server-connected GitHub workflows",
+    "uncommitted design drafts",
+    "business-specific knowledge/runbooks and internal CRM plans"
+  ],
+  "publicSanitization": {
+    "infrastructureAndPersonalExamples": [
+      ".env.example",
+      "tests/test_onyx_stage6.py",
+      "scripts/customer-completion-ui-final-runtime.mjs",
+      "scripts/customer-completion-ui-final-knowledge.mjs",
+      "scripts/customer-completion-ui-final-probe.mjs",
+      "scripts/verify-twenty-public-login.mjs",
+      "scripts/customer-completion-knowledge-repair.py",
+      "scripts/customer-completion-ui-integrated.mjs",
+      "scripts/customer-completion-voice-ui-run.mjs",
+      "scripts/customer-completion-voice-task-audit.py",
+      "scripts/audit-production-readiness.sh",
+      "scripts/customer-completion-data-ui-invitation-runtime.mjs",
+      "scripts/ava-product-audit-browser.mjs",
+      "scripts/customer-completion-ui-team-runtime.mjs",
+      "scripts/customer-completion-ui-utf8.mjs",
+      "scripts/customer-completion-onyx-reconcile.py",
+      "scripts/customer-path-20261017-routing-sweep.mjs",
+      "scripts/customer-completion-ui-business.mjs",
+      "scripts/migrate-ava-module-domains.py",
+      "scripts/customer-completion-ui-amo-products-run.mjs",
+      "scripts/customer-path-20261017-integrated-browser.mjs",
+      "scripts/customer-completion-ui-residual-run.mjs",
+      "scripts/customer-completion-ui-automation.mjs",
+      "scripts/install-single-host-prepared.sh",
+      "scripts/customer-completion-onyx-warmup.py",
+      "scripts/product-journeys-browser.mjs",
+      "scripts/customer-completion-data-ui-knowledge-generation.cjs",
+      "scripts/customer-path-20261017-browser.mjs",
+      "scripts/customer-completion-native-preview-live.cjs",
+      "scripts/customer-path-20261017-new-owner.mjs",
+      "scripts/customer-completion-native-preview-ui-run.mjs",
+      "scripts/customer-completion-data-ui-workflows.mjs",
+      "scripts/customer-completion-voice-run.py",
+      "scripts/reset-twenty-owner-local.mjs",
+      "scripts/customer-path-release/release_operator.py",
+      "scripts/customer-completion-release/release_operator.py",
+      "deploy/onyx/backup.sh",
+      "deploy/nginx/README_RU.md",
+      "deploy/twenty/README_RU.md",
+      "whatsapp_crm/tests/external-sip.test.js",
+      "whatsapp_crm/tests/twenty.test.js",
+      "whatsapp_crm/tests/pms.test.js",
+      "whatsapp_crm/tests/identity-protocol.test.js",
+      "whatsapp_crm/tests/managed-telephony.test.js",
+      "whatsapp_crm/frontend/tests/CustomerProductIntegration.browser.mjs",
+      "whatsapp_crm/frontend/tests/VoiceSettings.browser.mjs",
+      "whatsapp_crm/frontend/tests/DashboardInfographics.browser.mjs",
+      "whatsapp_crm/frontend/tests/CustomerPath.browser.mjs",
+      "whatsapp_crm/frontend/tests/ExistingTelephony.browser.mjs",
+      "whatsapp_crm/frontend/tests/GeminiTextSettings.browser.mjs",
+      "whatsapp_crm/frontend/tests/WorkspaceImprovements.browser.mjs",
+      "whatsapp_crm/frontend/tests/Telephony.browser.mjs",
+      "whatsapp_crm/frontend/tests/PublicIdentity.browser.mjs"
+    ],
+    "productionEnvironmentPublished": false
+  },
+  "gateway": {
+    "image": "sha256:167c53559bf7100cf23cd2836b9c03a2fb2bf5c05cbdbd27737b0b04bc642c50",
+    "verification": "image and patched file hashes read back; upstream library not relicensed or duplicated",
+    "files": {
+      "node_modules/whatsapp-web.js/src/structures/Message.js": "d4a96549534f18a4afaa5d871ac9518bd3e675a683259eaa5ab778ce729659c8",
+      "dist/engine/adapters/message-mapper.js": "9e245179539e09187f198347e5ddfe8686324e51086ea17296558999ac275979",
+      "dist/engine/adapters/wwebjs-message-events.js": "25088f69b50f27a5b59a5fdb1ba91f0ed662f3373904749b51b1619e7befe067",
+      "dist/engine/adapters/wwebjs-messaging.js": "ff78af50abc9d1d587585aff0519d3a0b567691f8642cb1c736e5ebae20a56da",
+      "dist/modules/session/message-row.mapper.js": "2d7bd2066ea7297b3ce2e29f22bedd09f8914336e229daef4ee05239a02a0eb3"
+    },
+    "productPatch": "scripts/openwa-product-context/patch.cjs",
+    "mediaPatch": "deploy/openwa/patch-media-mimetype.cjs",
+    "upstreamFixture": "tests/fixtures/openwa-0.23.4"
+  },
+  "frontend": {
+    "checkedAt": "2026-10-28T07:06:35.258924+00:00",
+    "build": "npm --prefix whatsapp_crm/frontend run build",
+    "files": {
+      "index.html": "9b0edbd7c69be1f6b2ccd6ffb0de29667f56c07ead9098f45bbe38958b97e4a8",
+      "sw.js": "4f538e95f18505ee9de79eb2d743aaf101edc87d0476ea835416673723e36012",
+      "branding/ava-crm.svg": "4daf894226249a53512f5afdb2666f0ebafd585805e7a2187fa72a0fbc660c69",
+      "assets/Autopilot-BA62HSkr.css": "8b4734fb688259b0d08b8b3701128a5a09b8da716371fc685e44ae2db3a308f1",
+      "assets/SmartTriggers-B3pTvz1R.css": "3784db192f68572e066feb0e2de291d987f30c044b4b060fa4c3397d85deb8ea",
+      "assets/KnowledgeReview-GFfUonie.js": "ea5f9ffd0aa86398c51fb3cf33b9a9464bd812641d09e0b1eb9102749a69d293",
+      "assets/Autopilot-tapTEFod.js": "4ad7e381eedec5abbe6f65bcf6d2963655d0f17fa9729b24291458cd953c1436",
+      "assets/link-2-CGfIM3tP.js": "5f39d2762f0a4f3de0aa6db394899600f70e701004c560f9766d43e535efd409",
+      "assets/SalesWorkspace-C_vBtiXH.css": "4e7967cfa9e9ad6d30ec5ad673bcd71f1acd4e7b271a92db8d15fe9f891748ed",
+      "assets/customerListHelpers-BD12_dA9.js": "503f54a14fe08c372269df383d2cc0689338f8bd6efbdfd4520a64326aa5d98a",
+      "assets/AmoCatalogImport-B8Me4siz.css": "ed1728b3dcb3407c9bfa00fb2f5ea70b309193db41e1592d645646595a9fdba5",
+      "assets/OutboundCampaigns-CfmMZIrA.css": "95106183096ccc1fdb669fa5525d17a93230dc2fb53900a3f1db2bc11355edf5",
+      "assets/KnowledgeBase-DvwAV9Oc.js": "1daaf33744f9695916b06be5e0334a0d90f36113d25072e8af1cc241a8d425b0",
+      "assets/circle-check-xOjHzYKy.js": "9e1733f01e64f5f3c2a1ebe9f7742bde0f33f01c6c9171aec69083c673979ddc",
+      "assets/Deals-0XIaXg8s.js": "79e15f819000eae7258cdfd72d4eadd61afa23256ef135183f6aed334aa24d28",
+      "assets/Reports-Cmt5yCp-.css": "b64967cae5e0227e2cc28a697128c8eacf41388ef3dff331072a97f6aeb6b8bd",
+      "assets/square-CiR8PoOP.js": "cd96e0a7764d686f6f317fae7e1d99aa2764b577c09bcdd6a632b70fd4cbfc19",
+      "assets/TimeZoneSelect-k36-bBt0.js": "929740a6851d8182ba7241efdae3180e17a7e21f09f3850325217f7d4e906073",
+      "assets/telephony-DjEnhO_U.js": "5c109489cd355ebaf930e49c511b8c15245e0a759d531b4d9bb723bd790f6160",
+      "assets/Opportunities-CTiVTMI7.css": "c8f3f6908f843292f925333a6de5e0c5c06dc6c0c60e46908fe8fcd8672405bd",
+      "assets/CustomerSetup-CKEkbv-x.js": "944b8492c715a361dc06a9ff8a984b05296a1c57a5029c322aa7b134cfa95e8c",
+      "assets/Dashboard-DzmZQ7v8.js": "e44342946aecea245156f74e5ce943f7ec4b02f10f2d95860aeea2602249bea0",
+      "assets/OnboardingGuide-CixbJRvm.js": "7fb89a55ea923accc430fd4c080bbc1d1fd8e8485e1dbf71c34d478ad8fc1316",
+      "assets/Studio-BcdfN8LY.js": "fd58eb2e8db6a26dce4e2865ed0239c6faf969557fb149314b1d9973310865cd",
+      "assets/index-DkP74Q-x.js": "36c14c83538993bd1cfc8e36820e143ac9f6b605102031e0fc18c525aaf98c92",
+      "assets/KnowledgeBase-MzVYPaMo.css": "b27dd1c9af368e512488787eef9382c9eb63ea2b5a97dbb4ad4322c1c5a7ba36",
+      "assets/store-BRzQoAIh.js": "9876fa79518018855709ca29f874b715b08b5b049efab28f42878db448945a75",
+      "assets/SalesWorkspace-WUmBxKjQ.js": "5b6645c901b1f38c7c10bdf1a348e40b34bb3c7257ec7067d72e464c45ff55a2",
+      "assets/Channels-BW7BPzv7.css": "4c4c4f2f2aebe9d1481ec947e3a5eb984dbab8fe08050704edf9f836a72ba55b",
+      "assets/brain-BAytdfKv.js": "4f3d4ca5c760b628eb6b601cc7cc5c8ec7dbbbb5fb7fbf880610c4ae91ba3f1c",
+      "assets/chevron-up-BXFZkRUA.js": "1d0b38e131ce3f10bda31fe7988881639dc833507a7326cdbda7c195b631379f",
+      "assets/download-hB8JXZuC.js": "f31ef40fe0600bc8ce762eaf33e91b785c0f37ba3980c0a9b9e77a300b5e7842",
+      "assets/BusinessSetupStatus-BTt2rhW9.js": "773cbe312f04d5acaf58ea0edd2a7431bfc3b1c48deafc566ad78689e0977263",
+      "assets/Analytics-DB-lW_h4.js": "8d8f6f6d047d24dba02439294cb1b9f4f3de957bae799449176630eb9c6dd94a",
+      "assets/Integrations-BFS5-L9E.js": "de09d275484fdcea0dcf376bf39698b0b30125ab987b3bb74ddd574f7c5f215b",
+      "assets/triangle-alert-Cdk4rm-T.js": "f44ba629f4e2ae695510c0bd116f61ca57e87f4e4b1f7526932948e24b96afbf",
+      "assets/Activity-DAJs1214.js": "f6c83ace849929ac7fb40b8272b909401cc5168d75850725e96fa5a0d117d33d",
+      "assets/WorkspaceAnalytics-CUxUkn7Z.css": "82db82d81311cf4c27f40d46b85249b11d8fd5a37cb0493d1b193f2165088e81",
+      "assets/Simulator-Ca0G-un8.js": "a0bde842536f048e2d6a169cd1600aa963fa2b214ae946bf29a8a153474f32f4",
+      "assets/QuickReplies-DOhxK_Fa.js": "1562ef6a01404ee64506152797a7100358422801442543dd8132afd86792d022",
+      "assets/usePeriod-DtOLqpUB.js": "f8ca418a3cd151bb5c1179a0580be3cc2d0b83ae743bc544825072ce060b5e86",
+      "assets/Leads-BmS1QXbB.js": "a9d09f55894f0f7abb9a177698224199e307d5715b0decdc6eae7b6d31fd6480",
+      "assets/BusinessGpt-DKMtYd9T.js": "32ceca3767b8d9dd07f272f4e9e3b5b26fd274b4470dd69e42ed260aa2d3bf96",
+      "assets/SmartTriggers-D6Rwu6pp.js": "0341246ac7f1089eb46c33b92d979333bfe96038c5cbbc6036f45f42afdee344",
+      "assets/ClientProfile-BQJc3NSS.js": "e1a83a948c3fb099c6c31848a6b92c440137731eaaafb25e4df719cd4306ecc2",
+      "assets/Conversations-Cu0Yqzcx.js": "4c54610108359eb7b85a4ee06eb179f01e67730dad55f3e571ae152a0c06ced2",
+      "assets/settings-2-C5eQf-Tg.js": "3f1722de803086574d0874e436b470ef659c892275aa898e679245881672f387",
+      "assets/CustomerCalls-DfL8-M7e.js": "728092fb9f45320a9d0b3b0b10b15177a276c401bd30c7fcdc7197cf8ae00a6a",
+      "assets/eye-DA7FytyT.js": "83e90b14b09a7a105cf79e43c0880199fb9ce8e3df6598375f5303170031be88",
+      "assets/list-Bvp3RQEJ.js": "11a079b301612ed65bfa652f79992789d54e08e47efe6485c7767f6aa78f005e",
+      "assets/BusinessGpt-BWIq7fb6.css": "b01b66cc0dcec7e41d4cae8958af064450ed51c7b776d7e7917aae79cde0ef36",
+      "assets/upload-BgZqq4FO.js": "9539f51d62e478fffb205130534c1e3cc8994b6d8d1aa1ea480659426cab9a09",
+      "assets/WorkspaceAnalytics-CPPGW1dE.js": "b9f1eb50ff2352d47c72424b7dbd70e5f30a3084ef2590b3540352d58d029d7d",
+      "assets/circle-alert-CBqNyXVw.js": "05544a072b10e6cb15aeea0c0f635722634dd3dee5ba2f673deb617c33eaa6d1",
+      "assets/CustomerSetup-BpR_Ym_X.css": "1c6a677720c0be8fbeaffdf2eff1db21229ec9dcf1a3c7b33caa5e01031fc445",
+      "assets/gift-BQkOltHl.js": "06bfd580d94d42f1b82755e1edc3901004a5bdd542cbab89a29eea7782ef26c9",
+      "assets/Activity-DjUMye1f.css": "4631809ef7d901ca6cf4326e9e6ff2043077bbe4508c067c007cf2e949152951",
+      "assets/Channels-Corvhkh_.js": "731195a6fce655847e4e392ba56b45644f81157c0854b35f047c6745e21850f5",
+      "assets/Leads-DMQxDwyq.css": "161f87bc9673a80d40d6afd6a7b53e4a0855d4e3103423157f42140162567328",
+      "assets/circle-check-big-CNe3cl4v.js": "952717b393ca38fbc8f4358e958c30bd4593b7e07c61d4d04e3c5510af184b64",
+      "assets/PageHeader-C51SfKjb.js": "0addaa5adbbdaa6f431ea6e752e83f7f86d36ca8283249d45359706f3ca8b8ca",
+      "assets/bell-BNRNPGWN.js": "0418be6388d7e5d5c5fc4e66ea4bf992d7114de28c45493936741a9445cc5608",
+      "assets/inbox-sRl3fYxz.js": "b5d163273cc7db65a29705ea0c25b006c39a8e48d46b3ca7be1898732ed2770f",
+      "assets/Team-CwOnbGHS.js": "4a45f22baa54f6f48e456457231562c0a8c467f248b6f57e7da9868e87d6b1a1",
+      "assets/tag-CHAQCeIV.js": "ddd5fe1e8d11121e2bb41e1ff6998c453d2733319205e3c121b561e6b4a8d2c4",
+      "assets/AiModelSettings-CrDfMkqu.js": "195c7c700a2bc9cf21565a2c4c57816beb4d8993194a63a3d31b477fd017a2a6",
+      "assets/clipboard-list-2S1CybYz.js": "e3f7c30796b73fc4b8408f3016811e081735408bb8bf181582b08caa391a59bc",
+      "assets/VoiceSettings-DnbFYk3E.css": "abdf4127f88decc0960a5859f1fd0591e228bede1839354e95d898acdc46fc9c",
+      "assets/play-BLkVpxcF.js": "18027a68f733ca5de2eed6b346fc526ad2aafb86bbc1400ca725d4e2e325528b",
+      "assets/Calls-tQs3Qjms.js": "56bca2df704ffc5cda9aaa480a7e59ddac30fe8517d2890ae48475b1cb7f9f0c",
+      "assets/clock-C2NiyZBL.js": "614aec16a0cc3c901ba6b2c4629afd067050ba895778e7a31a8f6727855154c4",
+      "assets/AmoCatalogImport-DsHM4PbR.js": "f6260c36bcfee8943e113228f5b9b178720f768d9c3732052ce923d9c5b47bf6",
+      "assets/Leads-Djgf03__.js": "ae0a2e2002c729a7e7072e2422d8ac9e214659eed4aefc0234dfb20a7f05f1e9",
+      "assets/copy-D0ueOolP.js": "b56bd55553c8b02b2277fb01cc374d47e307bb2aa871c78f71156d3366cde2fc",
+      "assets/Analytics-Ctwq8oLv.css": "c93f0149ff248f50e9ff48d28f091d319ae00c9f72ecef71600c621c4e406fa8",
+      "assets/Studio-Bk1jd8H8.css": "bde0804700636067b5abde67a5ff7894965a1013d4a6237c15430d6695e848d7",
+      "assets/index-Cr9le4u0.css": "093213e22a0c02d8bb45d31839032fcd43571ccfc655d759bd1c165e3dfc2ebc",
+      "assets/trending-up-DKmju4Ea.js": "d1d30f0113653ba6792c0918e384100ae85626b8bd3fc02d968a08df00ef92e8",
+      "assets/CustomerIntelligence-DYWW2uR5.js": "7374f16a22f4a34fa59ec6d1df72b4ae8519810aac3ddd633cad0e0faf74b166",
+      "assets/AllLeads-Cve3j2Qv.js": "744f28f65577db5eee9eb85c9de7e3f73bacc1be672416e00287fee2eb4a4805",
+      "assets/flame-CGqCQj_z.js": "41c651dfb44e57a395c7470ff71bbf4a709906574c1f8e281236a33699107a61",
+      "assets/KnowledgeReview-B3S5Kk06.css": "6bd1c8357a6a5a747abf5fc7e5416b71f460835ac348c2baa787f02c87e319a4",
+      "assets/Opportunities-DRcyg0ww.js": "e73ff22cfc4b1918ef04212e0a3eb101914fdb09004dc5ca2d69536ca8edb081",
+      "assets/Dashboard-DfD4YxxN.css": "e5d1074235a266689664ba0eef3c9d1c22923966d3c8c502410caddb982da0c4",
+      "assets/user-fV6ZczCa.js": "d3a732e0033410b55cc203da1d4ee37d265421b7517698656b3ee20c7a4ae5da",
+      "assets/save-DFONoygT.js": "4a5773229d1d10a2c1a2c4159ec31cb960414591a82923fdc62e6645fe05f2e7",
+      "assets/calendar-Cr7oCLrN.js": "8e5da1969481aea9cb296600c194495f44f0ec8b2245e52cd1bf252483a9ed17",
+      "assets/VoiceSettings-BxKV9S9S.js": "b129858929591dbae1c3c2d504ea95e360086733a83b8d6c7773178ce45a9eee",
+      "assets/OutboundCampaigns-D2zzoGyl.js": "586bd8455e94a8ecf88065eab66bc16bdb22789128afa013954a732071b6b7d4",
+      "assets/Reports-DCrd95Eq.js": "d97c92f3256c946ff581c3e0f9cb874a0b8081fd6da5e8f71e764144dc71041c",
+      "assets/CoffeeOps-DgfPSSwc.js": "ecf82d7d6bddb6e5eb1a6cb45a5104aeefe1acf46ac784287e73c82b308bacec",
+      "assets/Conversations-BvDuuCx1.css": "0876b97dd9d1ffda99627e858c7c3d46461f5e92d102aba797ad1ca458677129",
+      "assets/power-DPG296gA.js": "8821eec5c8fcd9bfd0ee44b5d14822be838a8edaf56d1c1bed90d9837373cdd4",
+      "assets/Deals-D6s-rw-L.css": "84d343ee15602a620ff12f594695147d0efe3d5880b7f42be5766d441dc8afb5",
+      "assets/target-MSV-iRAG.js": "abf2503a4beed94ef6b3020256ef91aba981caaccee69de8e73912a6707fca93",
+      "assets/AssistantBuilder-BJaaT-gJ.css": "e6ee508991a79a56409d09faf49127b56d6f4084ead1c3b64eabd72c4c45d47d",
+      "assets/trash-2-DoNkOoJ0.js": "f71ed7bb2068ab30bfedaf7a6ce406e6db073f30755e3e30689a07d8b2059ded",
+      "assets/InstanceManager-BDFcbArl.js": "1849ddcc72bd5d4771b81cb3d2b254bdb12ee8ada38a7be42f18e59fb62d6ce2",
+      "assets/AssistantBuilder-Baap13A-.js": "342f8bde70a19a220ea5a54c78f404d7bea4b7ae6f9585c7816327d529234115",
+      "assets/chart-column-BpGoXuzk.js": "bb0b5e2382e0ae6007949439e6d0072de6188c89fd3fdbfcce138f98c13d4464"
+    },
+    "allBuiltFilesMatchProduction": true,
+    "historicalRetainedAssetsIncluded": false
+  }
+}

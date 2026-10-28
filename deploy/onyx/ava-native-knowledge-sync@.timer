@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic private native knowledge catch-up for %i
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=15s
+RandomizedDelaySec=3s
+Unit=ava-native-knowledge-sync@%i.service
+
+[Install]
+WantedBy=timers.target

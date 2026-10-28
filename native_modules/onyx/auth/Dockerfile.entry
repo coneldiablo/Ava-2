@@ -1,0 +1,7 @@
+# Context: AVA repository root. Base must be the verified isolated guarded
+# image with namespace enforcement, offline tokenizer and native peer support.
+# The operator records and checks its image ID before building.
+ARG ONYX_GUARDED_IMAGE
+FROM ${ONYX_GUARDED_IMAGE}
+COPY native_modules/onyx/auth/http_guard.py /app/onyx/ava_auth/http_guard.py
+USER 1001:1001

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "twenty": {
+    "repository": "https://github.com/twentyhq/twenty.git",
+    "tag": "sdk/v2.37.0",
+    "commit": "6da524b8903ec16a3eeea4b2e4a5fb63dbfc1c58",
+    "license_url": "https://github.com/twentyhq/twenty/blob/6da524b8903ec16a3eeea4b2e4a5fb63dbfc1c58/LICENSE",
+    "files": {
+      "yarn.lock": "60e495535a84abc3a2ea06a2d9ce39a5611cf3f2a9349e62ef47cf52c0e9940a",
+      "package.json": "49b2f1ee384c680c75cb1b2008ffe8adb17f0eacd8f4cb564fe6045bb8b21f4f",
+      "packages/twenty-server/package.json": "0fdd9bc6451a866d8c9a222713edc4b5804a5838ad1c52ee2c795d17e14370a1",
+      "packages/twenty-server/src/engine/core-modules/auth/token/services/login-token.service.ts": "4bff0dfb5f7eae26951285c39c2eeb6f572cb2e5e6277bc98c17a57d59259a3b",
+      "packages/twenty-server/src/engine/core-modules/user-session/services/user-session.service.ts": "9402066c709434889d0624e458a826ddbb0cab45917cdecac8512d0ac785cff9",
+      "packages/twenty-server/src/engine/core-modules/user-session/services/user-session-cookie.service.ts": "cf24ba9647acd1b159f98653b7061c5c2489677cee106851e8ca3bcc5f134d2a",
+      "packages/twenty-server/src/engine/core-modules/user-session/user-session.module.ts": "27ad29cff1073ada998d6ba170dba51d9777bc7dec106af42a69080985f4af69",
+      "packages/twenty-server/src/engine/core-modules/auth/token/services/access-token.service.ts": "8fd3cf293292c08207399e6b688c74188fcb6ca0bb46c9bcfd86fa8186364ce8"
+    },
+    "installed_source_match_scope": "five_authentication_and_native_session_source_files",
+    "build_approved": false
+  },
+  "onyx": {
+    "repository": "https://github.com/onyx-dot-app/onyx.git",
+    "tag": "v4.7.0",
+    "commit": "a1b9e02eb65cc114c65381cbef5e555e1753ed0a",
+    "archive_url": "https://codeload.github.com/onyx-dot-app/onyx/tar.gz/a1b9e02eb65cc114c65381cbef5e555e1753ed0a",
+    "archive_sha256": "a203fdc92ef1e6a197afdb33f337ea652d776ea8d31c77c4f3b0d3966e2d9588",
+    "license_url": "https://github.com/onyx-dot-app/onyx/blob/v4.7.0/LICENSE",
+    "files": {
+      "backend/onyx/configs/app_configs.py": "ccad27204677d8c29e8f90731e33435bf0e45e0b571a063dcaef445a8ce7d850",
+      "backend/onyx/document_index/opensearch/client.py": "2e3fc8f873b4501324239de51150985a82b0bca948e4673910fc2eb632e55485",
+      "backend/onyx/auth/users.py": "f372f891f59e4d7b6902c15d35cbfe4ae3322247a12bfb84e0e4db4b09c77855",
+      "backend/onyx/main.py": "02d19bac26aea92f05dfa895a266040765c431cc20339d8dcfd7fe951f9937ca",
+      "web/src/lib/utilsSS.ts": "a59e2e7091bde510733cd91df1d4fc4a7e1a56ef36796afadeedfb60bb8077c5",
+      "web/src/lib/users/svcSS.ts": "e1d06c0ed252a3e21b605fd25ff69d22ba711a82632b4c60badfab814651a818",
+      "web/src/lib/auth/svcSS.ts": "05f94d4a4c91a8b2addf2329cc59844c927524eb0a6416a8007e2bcb431165f4",
+      "backend/requirements/default.txt": "02413ee98d8801a35832d4e4f0f4f98cb50ebbcfdb1bf2e7675c4bb8acef85eb",
+      "LICENSE": "d4847240794058c7ac3cfdf8e5d528fe8b0edf15b32a96612ecb9b3e182092b7"
+    },
+    "build_approved": false
+  }
+}

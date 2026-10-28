@@ -1,0 +1,10 @@
+.ava-attachment { min-inline-size: 0; padding: 12px; margin-block: 8px; border: 1px solid var(--border-color, #d8d7d2); border-radius: 12px; background: var(--bg-main, #faf9f6); }
+.ava-attachment-heading, .ava-attachment-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.ava-attachment-heading { justify-content: space-between; }
+.ava-attachment-heading span { font-size: 13px; }
+.ava-attachment p { margin-block: 8px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.ava-attachment p:empty { margin: 0; }
+.ava-attachment-actions .btn-secondary { display: inline-flex; gap: 8px; align-items: center; min-block-size: 40px; white-space: normal; text-align: start; }
+.ava-attachment-preview { margin-block-start: 12px; }
+.ava-attachment-preview img { display: block; max-inline-size: 100%; max-block-size: 420px; object-fit: contain; outline: 1px solid #0000001a; outline-offset: -1px; }
+.ava-attachment-preview audio { inline-size: 100%; }

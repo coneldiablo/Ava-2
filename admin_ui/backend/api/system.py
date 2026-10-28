@@ -1,0 +1,4471 @@
+from fastapi import APIRouter, HTTPException
+import docker
+from typing import List, Optional
+from pydantic import BaseModel
+import psutil
+import os
+import shutil
+import logging
+import re
+import subprocess
+import uuid
+import yaml
+from services.fs import upsert_env_vars
+
+logger = logging.getLogger(__name__)
+
+def _validate_git_ref(ref: str) -> str:
+    """
+    Basic defense-in-depth: reject values that could be interpreted by git as options.
+
+    We intentionally keep this permissive (allow typical branch names with `/._-`) and
+    rely on `git` to enforce full refname rules.
+    """
+    r = (ref or "").strip()
+    if not r or r.startswith("-") or any(c.isspace() for c in r):
+        raise HTTPException(status_code=400, detail="Invalid ref")
+    return r
+
+def _extract_mounts(container) -> List[dict]:
+    """
+    Normalize Docker mount info into a stable, UI-friendly shape.
+    Returns a list of dicts with snake_case keys.
+    """
+    mounts: List[dict] = []
+    try:
+        raw_mounts = container.attrs.get("Mounts", []) or []
+        for m in raw_mounts:
+            mounts.append(
+                {
+                    "type": m.get("Type"),
+                    "source": m.get("Source"),
+                    "destination": m.get("Destination"),
+                    "rw": m.get("RW"),
+                    "mode": m.get("Mode"),
+                    "propagation": m.get("Propagation"),
+                    "name": m.get("Name"),
+                    "driver": m.get("Driver"),
+                }
+            )
+    except Exception as e:
+        logger.debug("Error extracting mounts for %s: %s", getattr(container, "name", "<unknown>"), e)
+    return mounts
+
+def _dotenv_value(key: str) -> Optional[str]:
+    """
+    Read a key from the project's `.env` file (not the current process environment).
+
+    This is used for diagnostics and Tier-3 friendliness where users edit `.env` directly.
+    Note: Many settings are loaded into the container environment at *container creation time*,
+    so relying on os.environ alone can appear "stale" after editing `.env` without recreating.
+    """
+    try:
+        from settings import ENV_PATH
+        if not os.path.exists(ENV_PATH):
+            return None
+        from dotenv import dotenv_values
+        raw = dotenv_values(ENV_PATH)
+        val = raw.get(key)
+        if val is None:
+            return None
+        return str(val).strip()
+    except Exception:
+        return None
+
+def _is_truthy_env(value: Optional[str]) -> bool:
+    raw = (value or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+def _compose_files_flags_for_service(service_name: str) -> str:
+    """
+    Return compose file flags for service operations.
+
+    local_ai_server must include docker-compose.gpu.yml when GPU_AVAILABLE=true,
+    otherwise UI-triggered recreate/start can silently drop GPU device requests.
+    """
+    svc = {
+        "local-ai-server": "local_ai_server",
+        "ai-engine": "ai_engine",
+        "admin-ui": "admin_ui",
+    }.get(service_name, service_name)
+
+    if svc != "local_ai_server":
+        return ""
+
+    if not _is_truthy_env(_dotenv_value("GPU_AVAILABLE")):
+        return ""
+
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    gpu_compose = os.path.join(project_root, "docker-compose.gpu.yml")
+    if not os.path.exists(gpu_compose):
+        logger.warning(
+            "GPU_AVAILABLE=true but %s not found; falling back to base compose for %s",
+            _sanitize_for_log(gpu_compose),
+            _sanitize_for_log(svc),
+        )
+        return ""
+
+    return "-f docker-compose.yml -f docker-compose.gpu.yml"
+
+def _sanitize_for_log(value: str) -> str:
+    """Best-effort: prevent log injection via control characters."""
+    try:
+        return (value or "").replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
+    except Exception:
+        return "<unprintable>"
+
+def _is_safe_container_identifier(value: str) -> bool:
+    """
+    Accept only Docker-like container identifiers (defense-in-depth).
+    This avoids passing arbitrary user input into logs or subprocess calls.
+    """
+    import re
+
+    if not value:
+        return False
+    if value.startswith("-"):
+        return False
+    return re.match(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$", value) is not None
+
+def get_docker_compose_cmd() -> List[str]:
+    """
+    Find docker-compose binary dynamically.
+    Returns the command as a list (either ['docker-compose'] or ['docker', 'compose']).
+    """
+    compose_path = shutil.which('docker-compose')
+    if compose_path:
+        return [compose_path]
+    
+    docker_path = shutil.which('docker')
+    if docker_path:
+        import subprocess
+        try:
+            result = subprocess.run(
+                [docker_path, 'compose', 'version'],
+                capture_output=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                return [docker_path, 'compose']
+        except:
+            pass
+    
+    if os.path.exists('/usr/local/bin/docker-compose'):
+        return ['/usr/local/bin/docker-compose']
+    if os.path.exists('/usr/bin/docker-compose'):
+        return ['/usr/bin/docker-compose']
+    
+    raise FileNotFoundError('docker-compose not found in PATH or standard locations')
+
+router = APIRouter()
+
+class ContainerInfo(BaseModel):
+    id: str
+    name: str
+    status: str
+    state: str
+
+def _safe_container_image_name(container) -> str:
+    """
+    Resolve a human-readable image name without failing the whole containers endpoint.
+
+    Docker can return ImageNotFound for stale image IDs after prune/rebuild windows.
+    """
+    try:
+        image = container.image
+        tags = getattr(image, "tags", None) or []
+        if tags:
+            return tags[0]
+        short_id = getattr(image, "short_id", "")
+        if short_id:
+            return short_id
+    except docker.errors.ImageNotFound:
+        pass
+    except Exception as e:
+        logger.debug("Error resolving image object for container %s: %s", getattr(container, "name", "<unknown>"), e)
+
+    try:
+        config_image = str((container.attrs.get("Config", {}) or {}).get("Image") or "").strip()
+        if config_image:
+            return f"{config_image} (missing locally)"
+        image_id = str(container.attrs.get("Image") or "").strip()
+        if image_id:
+            if image_id.startswith("sha256:") and len(image_id) > 19:
+                return f"{image_id[:19]}... (missing locally)"
+            return f"{image_id} (missing locally)"
+    except Exception:
+        pass
+
+    return "unknown (image unavailable)"
+
+@router.get("/containers")
+async def get_containers():
+    try:
+        from datetime import datetime, timezone
+        
+        client = docker.from_env()
+        containers = client.containers.list(all=True)
+        result = []
+        for c in containers:
+            image_name = _safe_container_image_name(c)
+            
+            uptime = None
+            started_at = None
+            if c.status == "running":
+                try:
+                    started_str = c.attrs['State'].get('StartedAt', '')
+                    if started_str and started_str != '0001-01-01T00:00:00Z':
+                        import re
+                        match = re.match(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d+)(Z|[+-]\d{2}:\d{2})?', started_str)
+                        if match:
+                            base = match.group(1)
+                            frac = match.group(2)[:6].ljust(6, '0')
+                            tz = match.group(3) or '+00:00'
+                            if tz == 'Z':
+                                tz = '+00:00'
+                            normalized = f"{base}.{frac}{tz}"
+                            started_dt = datetime.fromisoformat(normalized)
+                        else:
+                            started_dt = datetime.fromisoformat(started_str.replace('Z', '+00:00'))
+                        
+                        started_at = started_str
+                        now = datetime.now(timezone.utc)
+                        delta = now - started_dt
+                        
+                        days = delta.days
+                        hours, remainder = divmod(delta.seconds, 3600)
+                        minutes, _ = divmod(remainder, 60)
+                        
+                        if days > 0:
+                            uptime = f"{days}d {hours}h {minutes}m"
+                        elif hours > 0:
+                            uptime = f"{hours}h {minutes}m"
+                        else:
+                            uptime = f"{minutes}m"
+                except Exception as e:
+                    logger.debug("Error calculating uptime for %s: %s", c.name, e)
+            
+            ports = []
+            try:
+                port_bindings = c.attrs.get('NetworkSettings', {}).get('Ports', {})
+                for container_port, host_bindings in (port_bindings or {}).items():
+                    if host_bindings:
+                        for binding in host_bindings:
+                            host_port = binding.get('HostPort', '')
+                            if host_port:
+                                ports.append(f"{host_port}:{container_port}")
+            except Exception:
+                pass
+            
+            result.append({
+                "id": c.id,
+                "name": c.name,
+                "image": image_name,
+                "status": c.status,
+                "state": c.attrs.get("State", {}).get("Status", c.status),
+                "uptime": uptime,
+                "started_at": started_at,
+                "ports": ports,
+                "mounts": _extract_mounts(c),
+            })
+        return result
+    except Exception as e:
+        logger.error("Error listing containers: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/containers/{container_id}/start")
+async def start_container(container_id: str):
+    """Start a stopped container using docker-compose or Docker API."""
+    import subprocess
+    
+    service_map = {
+        "ai_engine": "ai_engine",
+        "admin_ui": "admin_ui",
+        "local_ai_server": "local_ai_server",
+    }
+    container_name_map = {
+        "ai_engine": "ai_engine",
+        "admin_ui": "admin_ui",
+        "local_ai_server": "local_ai_server",
+        "ai-engine": "ai_engine",
+        "admin-ui": "admin_ui",
+        "local-ai-server": "local_ai_server",
+    }
+    
+    service_name = service_map.get(container_id)
+    
+    if not service_name:
+        try:
+            client = docker.from_env()
+            container = client.containers.get(container_id)
+            name = container.name.lstrip('/')
+            service_name = service_map.get(name)
+        except:
+            service_name = None
+
+    if not service_name and container_id in container_name_map:
+        service_name = service_map.get(container_name_map[container_id])
+
+    if service_name not in set(service_map.values()):
+        raise HTTPException(status_code=400, detail="Only AAVA services can be started from Admin UI")
+    
+    host_root = _project_host_root_from_admin_ui_container()
+    logger.info("Starting %s via updater-runner (host_root=%s)", _sanitize_for_log(service_name), _sanitize_for_log(host_root))
+
+    def _compose_up_cmd(svc: str, *, build: bool) -> str:
+        flag = "--build" if build else "--no-build"
+        compose_files = _compose_files_flags_for_service(svc)
+        compose_prefix = f"{compose_files} " if compose_files else ""
+        return (
+            "set -euo pipefail; "
+            "cd \"$PROJECT_ROOT\"; "
+            f"docker compose {compose_prefix}-p asterisk-ai-voice-agent up -d {flag} {svc}"
+        )
+
+    try:
+        if service_name == "local_ai_server":
+            code, out = _run_updater_ephemeral(
+                host_root,
+                env={"PROJECT_ROOT": host_root},
+                command=_compose_up_cmd(service_name, build=False),
+                timeout_sec=120,
+            )
+            if code == 0:
+                return {"status": "success", "output": out.strip() or "Container started"}
+
+            err = (out or "").strip()
+            needs_build_markers = [
+                "No such image",
+                "pull access denied",
+                "failed to solve",
+                "unable to find image",
+                "requires build",
+            ]
+            if any(m.lower() in err.lower() for m in needs_build_markers):
+                code2, out2 = _run_updater_ephemeral(
+                    host_root,
+                    env={"PROJECT_ROOT": host_root},
+                    command=_compose_up_cmd(service_name, build=True),
+                    timeout_sec=1800,
+                )
+                if code2 == 0:
+                    return {"status": "success", "output": out2.strip() or "Container started"}
+                raise HTTPException(status_code=500, detail=f"Failed to build/start local_ai_server: {(out2 or '').strip()[:800]}")
+
+            raise HTTPException(status_code=500, detail=f"Failed to start: {err[:800] or 'Unknown error'}")
+
+        code, out = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=_compose_up_cmd(service_name, build=True),
+            timeout_sec=600,
+        )
+        if code == 0:
+            return {"status": "success", "output": out.strip() or "Container started"}
+        raise HTTPException(status_code=500, detail=f"Failed to start: {(out or '').strip()[:800]}")
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Error starting service %s", _sanitize_for_log(str(service_name)), exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to start service")
+
+async def _check_active_calls() -> dict:
+    """
+    Check if AI Engine has active calls in progress.
+    
+    Returns:
+        Dict with active_calls count and warning message if any.
+    """
+    try:
+        data = await _fetch_ai_engine_sessions_stats()
+        if not data:
+            return {"active_calls": 0, "reachable": False}
+        active_calls = data.get("active_calls", data.get("active_sessions", 0))
+        return {"active_calls": active_calls, "reachable": True}
+    except Exception:
+        logger.debug("Could not check active calls", exc_info=True)
+        return {"active_calls": 0, "reachable": False}
+
+def _get_health_api_token() -> str:
+    return (os.getenv("HEALTH_API_TOKEN") or _dotenv_value("HEALTH_API_TOKEN") or "").strip()
+
+def _ai_engine_sessions_stats_urls() -> List[str]:
+    urls: List[str] = []
+    env_url = (os.getenv("AI_ENGINE_HEALTH_URL") or _dotenv_value("AI_ENGINE_HEALTH_URL") or "").strip()
+    if env_url:
+        urls.append(env_url.rstrip("/") + "/sessions/stats")
+    urls.extend(
+        [
+            "http://127.0.0.1:15000/sessions/stats",
+            "http://ai_engine:15000/sessions/stats",
+            "http://ai-engine:15000/sessions/stats",
+        ]
+    )
+    seen = set()
+    out: List[str] = []
+    for u in urls:
+        if u and u not in seen:
+            seen.add(u)
+            out.append(u)
+    return out
+
+def _ai_engine_health_urls() -> List[str]:
+    urls: List[str] = []
+    env_url = (
+        os.getenv("HEALTH_CHECK_AI_ENGINE_URL")
+        or _dotenv_value("HEALTH_CHECK_AI_ENGINE_URL")
+        or os.getenv("AI_ENGINE_HEALTH_URL")
+        or _dotenv_value("AI_ENGINE_HEALTH_URL")
+        or ""
+    ).strip()
+    if env_url:
+        base = env_url[:-7] if env_url.rstrip("/").endswith("/health") else env_url.rstrip("/")
+        urls.append(base.rstrip("/") + "/health")
+    urls.extend(
+        [
+            "http://127.0.0.1:15000/health",
+            "http://ai_engine:15000/health",
+            "http://ai-engine:15000/health",
+            "http://host.docker.internal:15000/health",
+        ]
+    )
+    seen = set()
+    out: List[str] = []
+    for url in urls:
+        if url and url not in seen:
+            seen.add(url)
+            out.append(url)
+    return out
+
+def _find_compose_service_container(client, service: str):
+    """
+    Find a container by compose service name in a robust way.
+    Prefers a direct name match (ai_engine), then falls back to compose labels.
+    """
+    try:
+        return client.containers.get(service)
+    except Exception:
+        pass
+
+    try:
+        containers = client.containers.list(all=True) or []
+        for c in containers:
+            labels = (getattr(c, "labels", None) or {}) if hasattr(c, "labels") else (c.attrs.get("Config", {}).get("Labels", {}) if getattr(c, "attrs", None) else {})
+            if labels.get("com.docker.compose.service") == service:
+                return c
+    except Exception:
+        pass
+    return None
+
+async def _fetch_ai_engine_health() -> Optional[dict]:
+    """
+    Fetch AI Engine /health from the Admin UI context.
+
+    Dashboard Asterisk status should not depend only on direct ARI access from
+    admin_ui. In common host-Asterisk deployments, ai_engine runs with the
+    correct network namespace while admin_ui does not, so ai_engine's own
+    ari_connected flag is the most reliable live signal.
+    """
+    import httpx
+    import json
+
+    headers = {}
+    token = _get_health_api_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            for url in _ai_engine_health_urls():
+                try:
+                    resp = await client.get(url, headers=headers)
+                    if resp.status_code == 200:
+                        return resp.json()
+                except httpx.ConnectError:
+                    continue
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
+    def _exec_fetch_sync() -> Optional[dict]:
+        try:
+            client = docker.from_env()
+            container = _find_compose_service_container(client, "ai_engine")
+            if not container:
+                return None
+            cmd = (
+                "python3 -c 'import json,urllib.request; "
+                "print(json.dumps(json.load(urllib.request.urlopen(\"http://127.0.0.1:15000/health\"))))'"
+            )
+            code, out = container.exec_run(["sh", "-lc", cmd])
+            if code != 0:
+                return None
+            text = out.decode("utf-8", errors="replace").strip()
+            return json.loads(text) if text else None
+        except Exception:
+            return None
+
+    import asyncio
+
+    try:
+        return await asyncio.to_thread(_exec_fetch_sync)
+    except Exception:
+        return None
+
+async def _fetch_ai_engine_sessions_stats() -> Optional[dict]:
+    """
+    Fetch AI Engine /sessions/stats.
+
+    This endpoint is security-gated in ai_engine: it requires localhost OR a valid HEALTH_API_TOKEN.
+    In Docker deployments, admin_ui calling ai_engine over the compose network isn't localhost, so
+    we either attach Authorization or fall back to docker exec (localhost inside the ai_engine container).
+    """
+    import httpx
+    import json
+
+    headers = {}
+    token = _get_health_api_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    urls = _ai_engine_sessions_stats_urls()
+    last_status: Optional[int] = None
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            for url in urls:
+                try:
+                    resp = await client.get(url, headers=headers)
+                    last_status = resp.status_code
+                    if resp.status_code == 200:
+                        return resp.json()
+                except httpx.ConnectError:
+                    continue
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
+    def _exec_fetch_sync() -> Optional[dict]:
+        try:
+            client = docker.from_env()
+            container = _find_compose_service_container(client, "ai_engine")
+            if not container:
+                return None
+            cmd = (
+                "python3 -c 'import json,urllib.request; "
+                "print(json.dumps(json.load(urllib.request.urlopen(\"http://127.0.0.1:15000/sessions/stats\"))))'"
+            )
+            code, out = container.exec_run(["sh", "-lc", cmd])
+            if code != 0:
+                return None
+            raw = (out or b"").decode("utf-8", errors="replace").strip()
+            if not raw:
+                return None
+            return json.loads(raw)
+        except Exception:
+            return None
+
+    if last_status == 403 or not token:
+        import asyncio
+
+        return await asyncio.to_thread(_exec_fetch_sync)
+
+    return None
+
+@router.post("/containers/{container_id}/restart")
+async def restart_container(container_id: str, force: bool = False, recreate: bool = False):
+    """
+    Restart a container using Docker SDK (preferred) or docker-compose.
+    
+    Args:
+        container_id: Container name or service name
+        force: If False and active calls exist, returns warning instead of restarting
+        recreate: If True, use docker-compose --force-recreate to pick up .env changes (AAVA-161)
+    
+    Returns:
+        Success response with health_status, or warning if active calls and not forced.
+    """
+    service_map = {
+        "ai_engine": "ai_engine",
+        "admin_ui": "admin_ui",
+        "local_ai_server": "local_ai_server",
+    }
+    
+    container_name_map = {
+        "ai_engine": "ai_engine",
+        "admin_ui": "admin_ui",
+        "local_ai_server": "local_ai_server",
+        "ai-engine": "ai_engine",
+        "admin-ui": "admin_ui",
+        "local-ai-server": "local_ai_server",
+    }
+    
+    is_known = False
+    container_name = container_id
+    if container_id in service_map:
+        container_name = container_id
+        is_known = True
+    elif container_id in container_name_map:
+        container_name = container_name_map[container_id]
+        is_known = True
+
+    if not _is_safe_container_identifier(container_name):
+        raise HTTPException(status_code=400, detail=f"Invalid container id: {container_id!r}")
+    
+    safe_container_name = _sanitize_for_log(container_name)
+    logger.info("Restarting container: %s", safe_container_name)
+
+    if container_name == "ai_engine" and not force:
+        call_status = await _check_active_calls()
+        if call_status["active_calls"] > 0:
+            return {
+                "status": "warning",
+                "message": f"Cannot restart: {call_status['active_calls']} active call(s) in progress",
+                "active_calls": call_status["active_calls"],
+                "action_required": "Set force=true to restart anyway, or wait for calls to complete",
+            }
+
+    if recreate and is_known and container_name != "admin_ui":
+        logger.info("Using force-recreate for %s to apply env changes", safe_container_name)
+        return await _recreate_via_compose(container_name, health_check=True)
+
+    if container_name == "admin_ui":
+        import asyncio
+
+        async def _restart_admin_ui_later():
+            try:
+                await asyncio.sleep(0.75)
+                client = docker.from_env()
+                client.containers.get("admin_ui").restart(timeout=10)
+            except Exception as e:
+                logger.error("Failed to restart admin_ui via Docker SDK: %s", e)
+
+        asyncio.create_task(_restart_admin_ui_later())
+        return {
+            "status": "success",
+            "method": "docker-sdk",
+            "output": "Admin UI restart scheduled (page will reload shortly)",
+            "note": (
+                "If you need admin_ui env_file changes to apply, run on the host: "
+                "`docker compose -p asterisk-ai-voice-agent up -d --force-recreate admin_ui`."
+            ),
+        }
+    
+    try:
+        client = docker.from_env()
+        container = client.containers.get(container_name)
+        
+        container.restart(timeout=10)
+        
+        logger.info("Container %s restarted successfully via Docker SDK", safe_container_name)
+        payload = {
+            "status": "success", 
+            "method": "docker-sdk",
+            "output": f"Container {safe_container_name} restarted"
+        }
+        if container_name in ("ai_engine", "local_ai_server"):
+            payload["note"] = (
+                "Restart does not reload env_file (.env) changes. "
+                "If you changed .env, use a recreate/force-recreate for this service."
+            )
+        return payload
+        
+    except docker.errors.NotFound:
+        logger.warning("Container %s not found", safe_container_name)
+        if is_known:
+            logger.warning("Attempting docker-compose up for %s", safe_container_name)
+            return await _start_via_compose(container_id, service_map)
+        raise HTTPException(status_code=404, detail=f"Container not found: {container_id}")
+        
+    except docker.errors.APIError as e:
+        logger.error("Docker API error restarting %s: %s", safe_container_name, _sanitize_for_log(str(e)))
+        if is_known:
+            return await _start_via_compose(container_id, service_map)
+        raise HTTPException(status_code=500, detail="Docker API error restarting container")
+        
+    except Exception as e:
+        logger.error("Error restarting container %s", safe_container_name, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to restart container")
+
+async def _start_via_compose(container_id: str, service_map: dict):
+    """Helper to start a container via docker-compose."""
+    service_name = service_map.get(container_id)
+    if not service_name:
+        raise HTTPException(status_code=400, detail="Unsupported service for compose start")
+    
+    try:
+        host_root = _project_host_root_from_admin_ui_container()
+        build_flag = "--build" if service_name == "local_ai_server" else "--no-build"
+        timeout_sec = 1800 if service_name == "local_ai_server" else 300
+        compose_files = _compose_files_flags_for_service(service_name)
+        compose_prefix = f"{compose_files} " if compose_files else ""
+        cmd = (
+            "set -euo pipefail; "
+            "cd \"$PROJECT_ROOT\"; "
+            f"docker compose {compose_prefix}-p asterisk-ai-voice-agent up -d {build_flag} {service_name}"
+        )
+
+        code, out = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=cmd,
+            timeout_sec=timeout_sec,
+        )
+        if code == 0:
+            return {"status": "success", "method": "docker-compose", "output": (out or '').strip() or "Container started"}
+        raise HTTPException(status_code=500, detail=f"Failed to start via compose: {(out or '').strip()[:800]}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+async def _recreate_via_compose(service_name: str, health_check: bool = True):
+    """
+    Force-recreate a compose service so env_file changes (.env) are applied.
+    
+    Args:
+        service_name: Docker Compose service name (e.g., "ai_engine")
+        health_check: If True, poll health endpoint after recreate (default: True)
+    
+    Returns:
+        Dict with status, method, and health_status fields
+    """
+    import httpx
+    host_root = _project_host_root_from_admin_ui_container()
+
+    legacy_to_canonical = {
+        "ai-engine": "ai_engine",
+        "admin-ui": "admin_ui",
+        "local-ai-server": "local_ai_server",
+    }
+    service_name = legacy_to_canonical.get(service_name, service_name)
+    if not _is_safe_container_identifier(service_name):
+        raise HTTPException(status_code=400, detail="Invalid service name")
+    
+    service_config = {
+        "ai_engine": {
+            "container": "ai_engine",
+            "health_url": "http://127.0.0.1:15000/ready",
+            "health_timeout": 30,
+        },
+        "admin_ui": {
+            "container": "admin_ui",
+            "health_url": None,
+            "health_timeout": 10,
+        },
+        "local_ai_server": {
+            "container": "local_ai_server",
+            "health_url": None,
+            "health_timeout": 60,
+        }
+    }
+    if service_name not in service_config:
+        raise HTTPException(status_code=400, detail="Unknown service")
+    config = service_config[service_name]
+    container_name = config["container"]
+    safe_container_name = _sanitize_for_log(container_name)
+
+    try:
+        try:
+            client = docker.from_env()
+            container = client.containers.get(container_name)
+            logger.info("Stopping container %s before recreate", safe_container_name)
+            container.stop(timeout=10)
+            container.remove()
+            logger.info("Container %s stopped and removed", safe_container_name)
+        except docker.errors.NotFound:
+            logger.info("Container %s not found, will create fresh", safe_container_name)
+        except Exception as e:
+            logger.warning("Error stopping container %s", safe_container_name, exc_info=True)
+        
+        compose_files = _compose_files_flags_for_service(service_name)
+        compose_prefix = f"{compose_files} " if compose_files else ""
+        cmd = (
+            "set -euo pipefail; "
+            "cd \"$PROJECT_ROOT\"; "
+            f"docker compose {compose_prefix}-p asterisk-ai-voice-agent up -d --force-recreate --no-build {service_name}"
+        )
+        timeout_sec = 600 if service_name == "local_ai_server" else 300
+        code, out = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=cmd,
+            timeout_sec=timeout_sec,
+        )
+        if code != 0:
+            raise HTTPException(status_code=500, detail=f"Failed to recreate via compose: {(out or '').strip()[:800]}")
+        
+        health_status = "skipped"
+        if health_check:
+            health_status = await _poll_health(
+                service_name,
+                timeout_seconds=config["health_timeout"],
+            )
+        
+        if health_status == "timeout":
+            return {
+                "status": "degraded",
+                "method": "docker-compose",
+                "output": (out or "").strip() or "Service recreated but health check timed out",
+                "health_status": health_status,
+            }
+        elif health_status == "unhealthy":
+            return {
+                "status": "degraded",
+                "method": "docker-compose",
+                "output": (out or "").strip() or "Service recreated but not healthy",
+                "health_status": health_status,
+            }
+        
+        return {
+            "status": "success", 
+            "method": "docker-compose", 
+            "output": (out or "").strip() or "Service recreated",
+            "health_status": health_status,
+        }
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        raise HTTPException(status_code=500, detail="Failed to recreate service") from e
+
+async def _poll_health(service_name: str, timeout_seconds: int = 30) -> str:
+    """
+    Poll a health endpoint until it returns success or timeout.
+    
+    Returns: "healthy", "unhealthy", or "timeout"
+    """
+    import httpx
+    import asyncio
+    from urllib.parse import urlparse
+    
+    start_time = asyncio.get_event_loop().time()
+    poll_interval = 2
+    last_status_code = None
+
+    health_urls = {
+        "ai_engine": "http://127.0.0.1:15000/ready",
+        "admin_ui": None,
+        "local_ai_server": None,
+    }
+    health_url = health_urls.get(service_name)
+    if not health_url:
+        return "skipped"
+
+    parsed = urlparse(health_url)
+    if parsed.scheme not in ("http", "https") or (parsed.hostname or "") not in {"127.0.0.1", "localhost"}:
+        logger.error("Refusing to poll non-local health URL for %s", _sanitize_for_log(service_name))
+        return "timeout"
+    
+    logger.info(
+        "Polling health for %s at %s (timeout: %ss)",
+        _sanitize_for_log(service_name),
+        _sanitize_for_log(health_url),
+        timeout_seconds,
+    )
+    
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        while True:
+            elapsed = asyncio.get_event_loop().time() - start_time
+            if elapsed >= timeout_seconds:
+                if last_status_code is not None and last_status_code != 200:
+                    logger.warning(
+                        "Health check unhealthy for %s: last status %s",
+                        _sanitize_for_log(service_name),
+                        last_status_code,
+                    )
+                    return "unhealthy"
+                logger.warning(
+                    "Health check timeout for %s after %ss",
+                    _sanitize_for_log(service_name),
+                    timeout_seconds,
+                )
+                return "timeout"
+            
+            try:
+                resp = await client.get(health_url)
+                last_status_code = resp.status_code
+                if resp.status_code == 200:
+                    logger.info(
+                        "Health check passed for %s after %.1fs",
+                        _sanitize_for_log(service_name),
+                        elapsed,
+                    )
+                    return "healthy"
+                else:
+                    logger.debug(f"Health check returned {resp.status_code}, retrying...")
+            except httpx.ConnectError:
+                logger.debug(f"Health check connection failed, retrying...")
+            except Exception as e:
+                logger.debug(f"Health check error: {e}, retrying...")
+            
+            await asyncio.sleep(poll_interval)
+
+@router.post("/containers/ai_engine/reload")
+async def reload_ai_engine():
+    """
+    Hot-reload AI Engine configuration without restarting the container.
+    This reloads ai-agent.yaml changes ONLY. 
+    
+    NOTE: .env changes are NOT applied by hot-reload because the AI Engine reads
+    credentials from os.environ at startup (via security.py inject_* functions).
+    For .env changes, use /containers/ai_engine/restart with recreate=true (force-recreates the container).
+    
+    Returns restart_required=True if:
+    - New providers need to be added (hot-reload can't add new providers)
+    - AI Engine's /reload endpoint signals "reload deferred" or "restart needed"
+    
+    This endpoint does NOT detect .env changes - callers must track that separately.
+    """
+    try:
+        import httpx
+        env = os.getenv("HEALTH_CHECK_AI_ENGINE_URL")
+        candidates = []
+        if env:
+            candidates.append(env.replace("/health", "/reload"))
+        candidates.extend(
+            [
+                "http://127.0.0.1:15000/reload",
+                "http://ai-engine:15000/reload",
+                "http://ai_engine:15000/reload",
+            ]
+        )
+        seen = set()
+        urls = []
+        for u in candidates:
+            u = (u or "").strip()
+            if u and u not in seen:
+                seen.add(u)
+                urls.append(u)
+        
+        resp = None
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            for url in urls:
+                try:
+                    logger.info(f"Sending reload request to AI Engine at {url}")
+                    resp = await client.post(url)
+                    break
+                except httpx.ConnectError:
+                    continue
+        if resp is None:
+            raise HTTPException(status_code=503, detail="AI Engine is not reachable")
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            changes = data.get("changes", [])
+                
+            restart_required = any(
+                any(marker in str(c).lower() for marker in ("restart needed", "reload deferred"))
+                for c in changes
+            )
+                
+            if restart_required:
+                return {
+                    "status": "partial",
+                    "message": "Config updated but some changes require a restart to fully apply",
+                    "changes": changes,
+                    "restart_required": True
+                }
+                
+            return {
+                "status": "success",
+                "message": data.get("message", "Configuration reloaded"),
+                "changes": changes,
+                "restart_required": False
+            }
+        
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=f"AI Engine reload failed: {resp.text}"
+        )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail="AI Engine is not running. Start it first."
+        )
+    except Exception as e:
+        logger.error(f"Error reloading AI Engine: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/metrics")
+async def get_system_metrics():
+    try:
+        cpu_percent = psutil.cpu_percent(interval=None)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        return {
+            "cpu": {
+                "percent": cpu_percent,
+                "count": psutil.cpu_count()
+            },
+            "memory": {
+                "total": memory.total,
+                "available": memory.available,
+                "percent": memory.percent,
+                "used": memory.used
+            },
+            "disk": {
+                "total": disk.total,
+                "free": disk.free,
+                "percent": disk.percent
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/docker/disk-usage")
+async def get_docker_disk_usage():
+    """
+    Get Docker disk usage breakdown (images, containers, build cache, volumes).
+    This helps identify what's consuming disk space.
+    """
+    import subprocess
+    
+    try:
+        result = subprocess.run(
+            ["docker", "system", "df", "-v", "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            result = subprocess.run(
+                ["docker", "system", "df"],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            lines = result.stdout.strip().split('\n')
+            usage = {
+                "images": {"total": 0, "active": 0, "size": "0B", "reclaimable": "0B"},
+                "containers": {"total": 0, "active": 0, "size": "0B", "reclaimable": "0B"},
+                "volumes": {"total": 0, "active": 0, "size": "0B", "reclaimable": "0B"},
+                "build_cache": {"total": 0, "active": 0, "size": "0B", "reclaimable": "0B"},
+            }
+            
+            for line in lines[1:]:
+                parts = line.split()
+                if len(parts) >= 5:
+                    type_name = parts[0].lower()
+                    if type_name == "images":
+                        usage["images"] = {
+                            "total": int(parts[1]) if parts[1].isdigit() else 0,
+                            "active": int(parts[2]) if parts[2].isdigit() else 0,
+                            "size": parts[3],
+                            "reclaimable": parts[4] if len(parts) > 4 else "0B"
+                        }
+                    elif type_name == "containers":
+                        usage["containers"] = {
+                            "total": int(parts[1]) if parts[1].isdigit() else 0,
+                            "active": int(parts[2]) if parts[2].isdigit() else 0,
+                            "size": parts[3],
+                            "reclaimable": parts[4] if len(parts) > 4 else "0B"
+                        }
+                    elif type_name == "local" and len(parts) > 1 and parts[1].lower() == "volumes":
+                        usage["volumes"] = {
+                            "total": int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0,
+                            "active": int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 0,
+                            "size": parts[4] if len(parts) > 4 else "0B",
+                            "reclaimable": parts[5] if len(parts) > 5 else "0B"
+                        }
+                    elif type_name == "build":
+                        usage["build_cache"] = {
+                            "total": int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0,
+                            "active": int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 0,
+                            "size": parts[4] if len(parts) > 4 else "0B",
+                            "reclaimable": parts[5] if len(parts) > 5 else "0B"
+                        }
+            
+            return usage
+        
+        import json
+        data = json.loads(result.stdout)
+        
+        def format_bytes(size_bytes):
+            """Convert bytes to human readable string."""
+            if size_bytes == 0:
+                return "0B"
+            for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+                if abs(size_bytes) < 1024.0:
+                    return f"{size_bytes:.1f}{unit}"
+                size_bytes /= 1024.0
+            return f"{size_bytes:.1f}PB"
+        
+        images = data.get("Images", []) or []
+        containers = data.get("Containers", []) or []
+        volumes = data.get("Volumes", []) or []
+        build_cache = data.get("BuildCache", []) or []
+        
+        def parse_size(size_str):
+            """Parse size string like '10.2GB' to bytes."""
+            if not size_str or size_str == "0B":
+                return 0
+            try:
+                units = [('TB', 1024**4), ('GB', 1024**3), ('MB', 1024**2), ('KB', 1024), ('B', 1)]
+                size_upper = size_str.upper()
+                for unit, multiplier in units:
+                    if size_upper.endswith(unit):
+                        return float(size_str[:-len(unit)]) * multiplier
+                return float(size_str)
+            except:
+                return 0
+        
+        def safe_int(val, default=0):
+            """Safely convert value to int."""
+            if val is None:
+                return default
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return default
+        
+        img_total_size = sum(parse_size(img.get("Size", "0B")) for img in images)
+        img_reclaimable = sum(parse_size(img.get("Size", "0B")) for img in images if safe_int(img.get("Containers")) == 0)
+        img_active = sum(1 for img in images if safe_int(img.get("Containers")) > 0)
+        
+        cont_total_size = sum(parse_size(c.get("Size", "0B")) for c in containers)
+        cont_reclaimable = sum(parse_size(c.get("Size", "0B")) for c in containers if c.get("State") != "running")
+        cont_active = sum(1 for c in containers if c.get("State") == "running")
+        
+        vol_total_size = sum(parse_size(v.get("Size", "0B")) for v in volumes)
+        vol_active = sum(1 for v in volumes if safe_int(v.get("Links")) > 0)
+        
+        bc_total_size = sum(parse_size(bc.get("Size", "0B")) for bc in build_cache)
+        bc_reclaimable = sum(parse_size(bc.get("Size", "0B")) for bc in build_cache if bc.get("InUse") == "false")
+        bc_active = sum(1 for bc in build_cache if bc.get("InUse") == "true")
+        
+        return {
+            "images": {
+                "total": len(images),
+                "active": img_active,
+                "size": format_bytes(img_total_size),
+                "reclaimable": format_bytes(img_reclaimable)
+            },
+            "containers": {
+                "total": len(containers),
+                "active": cont_active,
+                "size": format_bytes(cont_total_size),
+                "reclaimable": format_bytes(cont_reclaimable)
+            },
+            "volumes": {
+                "total": len(volumes),
+                "active": vol_active,
+                "size": format_bytes(vol_total_size),
+                "reclaimable": "0B"
+            },
+            "build_cache": {
+                "total": len(build_cache),
+                "active": bc_active,
+                "size": format_bytes(bc_total_size),
+                "reclaimable": format_bytes(bc_reclaimable)
+            }
+        }
+        
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="Timeout getting Docker disk usage")
+    except Exception as e:
+        logger.error(f"Error getting Docker disk usage: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class PruneRequest(BaseModel):
+    prune_build_cache: bool = True
+    prune_images: bool = False
+    prune_containers: bool = False
+    prune_volumes: bool = False
+
+class PruneResponse(BaseModel):
+    success: bool
+    space_reclaimed: str
+    details: dict
+
+@router.post("/docker/prune", response_model=PruneResponse)
+async def prune_docker_resources(request: PruneRequest):
+    """
+    Clean up Docker resources to free disk space.
+    
+    WARNING: This operation is destructive and cannot be undone.
+    - Build cache: Safe to prune (will rebuild as needed)
+    - Images: Removes unused images (tagged images in use are preserved)
+    - Containers: Removes stopped containers only
+    - Volumes: DANGEROUS - can cause data loss
+    """
+    import subprocess
+    
+    total_reclaimed = 0
+    details = {}
+    
+    try:
+        if request.prune_build_cache:
+            result = subprocess.run(
+                ["docker", "builder", "prune", "-a", "-f"],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            if result.returncode == 0:
+                output = result.stdout + result.stderr
+                details["build_cache"] = "pruned"
+                for line in output.split('\n'):
+                    if 'reclaimed' in line.lower() or 'freed' in line.lower():
+                        details["build_cache_output"] = line.strip()
+            else:
+                details["build_cache"] = f"error: {result.stderr}"
+        
+        if request.prune_images:
+            result = subprocess.run(
+                ["docker", "image", "prune", "-a", "-f"],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            if result.returncode == 0:
+                details["images"] = "pruned"
+                for line in result.stdout.split('\n'):
+                    if 'reclaimed' in line.lower():
+                        details["images_output"] = line.strip()
+            else:
+                details["images"] = f"error: {result.stderr}"
+        
+        if request.prune_containers:
+            result = subprocess.run(
+                ["docker", "container", "prune", "-f"],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if result.returncode == 0:
+                details["containers"] = "pruned"
+            else:
+                details["containers"] = f"error: {result.stderr}"
+        
+        if request.prune_volumes:
+            result = subprocess.run(
+                ["docker", "volume", "prune", "-f"],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if result.returncode == 0:
+                details["volumes"] = "pruned"
+            else:
+                details["volumes"] = f"error: {result.stderr}"
+        
+        result = subprocess.run(
+            ["docker", "system", "df"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        return PruneResponse(
+            success=True,
+            space_reclaimed=details.get("build_cache_output", "Unknown"),
+            details=details
+        )
+        
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="Timeout during Docker prune")
+    except Exception as e:
+        logger.error(f"Error pruning Docker resources: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/health")
+async def get_system_health():
+    """
+    Aggregate health status from Local AI Server and AI Engine.
+    """
+    def _dedupe_preserve_order(items: List[str]) -> List[str]:
+        seen = set()
+        out: List[str] = []
+        for item in items:
+            if not item or item in seen:
+                continue
+            seen.add(item)
+            out.append(item)
+        return out
+
+    async def check_local_ai():
+        try:
+            import websockets
+            import json
+            import asyncio
+            from settings import get_setting
+            
+            env_uri = (_dotenv_value("HEALTH_CHECK_LOCAL_AI_URL") or "").strip()
+            if not env_uri:
+                env_uri = (os.getenv("HEALTH_CHECK_LOCAL_AI_URL") or "").strip()
+            candidates = _dedupe_preserve_order([
+                env_uri,
+                "ws://127.0.0.1:8765",
+                "ws://local_ai_server:8765",
+                "ws://local-ai-server:8765",
+                "ws://host.docker.internal:8765",
+            ])
+
+            last_error: Optional[str] = None
+            errors_by_uri: dict = {}
+            for uri in candidates:
+                logger.debug("Checking Local AI at %s", uri)
+                try:
+                    async with websockets.connect(uri, open_timeout=2.5) as websocket:
+                        logger.debug("Local AI connected, sending status...")
+                        auth_token = (get_setting("LOCAL_WS_AUTH_TOKEN", os.getenv("LOCAL_WS_AUTH_TOKEN", "")) or "").strip()
+                        if auth_token:
+                            await websocket.send(json.dumps({"type": "auth", "auth_token": auth_token}))
+                            raw = await asyncio.wait_for(websocket.recv(), timeout=5)
+                            auth_data = json.loads(raw)
+                            if auth_data.get("type") != "auth_response" or auth_data.get("status") != "ok":
+                                raise RuntimeError(f"Local AI auth failed: {auth_data}")
+                        await websocket.send(json.dumps({"type": "status"}))
+                        logger.debug("Local AI sent, waiting for response...")
+                        response = await asyncio.wait_for(websocket.recv(), timeout=5)
+                        logger.debug("Local AI response: %s...", response[:100])
+                        data = json.loads(response)
+                        if data.get("type") == "status_response":
+                            kroko = data.get("kroko") or {}
+                            kokoro = data.get("kokoro") or {}
+
+                            kroko_embedded = bool(kroko.get("embedded", False))
+                            kroko_port = kroko.get("port")
+
+                            kokoro_mode = (kokoro.get("mode") or "local").lower()
+                            kokoro_voice = kokoro.get("voice")
+
+                            if not kokoro_voice:
+                                tts_display = data.get("models", {}).get("tts", {}).get("display") or ""
+                                if "(" in tts_display and ")" in tts_display:
+                                    kokoro_voice = tts_display.split("(")[1].rstrip(")")
+
+                            data["kroko_embedded"] = kroko_embedded
+                            data["kroko_port"] = kroko_port
+                            data["kokoro_mode"] = kokoro_mode
+                            data["kokoro_voice"] = kokoro_voice
+
+                            silero = data.get("silero")
+                            if not isinstance(silero, dict):
+                                silero = {}
+                            data["silero_language"] = silero.get("language")
+                            data["silero_speaker"] = silero.get("speaker")
+                            data["silero_model_id"] = silero.get("model_id")
+                            
+                            warning = None
+                            if env_uri and uri != env_uri:
+                                warning = (
+                                    f"HEALTH_CHECK_LOCAL_AI_URL is set but unreachable ({env_uri}); "
+                                    f"connected via fallback ({uri})."
+                                )
+                            return {
+                                "status": "connected",
+                                "details": data,
+                                "probe": {
+                                    "selected": uri,
+                                    "attempted": candidates,
+                                    "errors": errors_by_uri,
+                                }
+                                ,
+                                "warning": warning,
+                            }
+                        else:
+                            last_error = "Invalid response type"
+                except Exception as e:
+                    last_error = f"{type(e).__name__}: {str(e)}"
+                    errors_by_uri[uri] = last_error
+                    continue
+
+            preferred_error = None
+            if env_uri:
+                preferred_error = errors_by_uri.get(env_uri)
+            if not preferred_error:
+                preferred_error = errors_by_uri.get("ws://127.0.0.1:8765")
+            if not preferred_error:
+                preferred_error = last_error
+
+            return {
+                "status": "error",
+                "details": {"error": preferred_error or "Unreachable"},
+                "probe": {
+                    "selected": None,
+                    "attempted": candidates,
+                    "errors": errors_by_uri,
+                    "error": preferred_error or "Unreachable",
+                }
+            }
+        except Exception as e:
+            logger.debug("Local AI Check Error: %s: %s", type(e).__name__, str(e))
+            return {
+                "status": "error",
+                "details": {"error": f"{type(e).__name__}: {str(e)}"},
+            }
+
+    async def check_ai_engine():
+        try:
+            import httpx
+            env_url = (_dotenv_value("HEALTH_CHECK_AI_ENGINE_URL") or "").strip()
+            if not env_url:
+                env_url = (os.getenv("HEALTH_CHECK_AI_ENGINE_URL") or "").strip()
+            candidates = _dedupe_preserve_order([
+                env_url,
+                "http://127.0.0.1:15000/health",
+                "http://ai_engine:15000/health",
+                "http://ai-engine:15000/health",
+                "http://host.docker.internal:15000/health",
+            ])
+
+            timeout = httpx.Timeout(5.0, connect=1.5)
+            last_error: Optional[str] = None
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                for url in candidates:
+                    logger.debug("Checking AI Engine at %s", url)
+                    try:
+                        resp = await client.get(url)
+                        logger.debug("AI Engine response: %s", resp.status_code)
+                        if resp.status_code == 200:
+                            warning = None
+                            if env_url and url != env_url:
+                                warning = (
+                                    f"HEALTH_CHECK_AI_ENGINE_URL is set but unreachable ({env_url}); "
+                                    f"connected via fallback ({url})."
+                                )
+                            return {
+                                "status": "connected",
+                                "details": resp.json(),
+                                "probe": {
+                                    "selected": url,
+                                    "attempted": candidates,
+                                }
+                                ,
+                                "warning": warning,
+                            }
+                        last_error = f"HTTP {resp.status_code}"
+                    except Exception as e:
+                        last_error = f"{type(e).__name__}: {str(e)}"
+                        continue
+
+            fallback_health = await _fetch_ai_engine_health()
+            if isinstance(fallback_health, dict):
+                return {
+                    "status": "connected",
+                    "details": fallback_health,
+                    "probe": {
+                        "selected": "docker_exec:ai_engine",
+                        "attempted": candidates,
+                        "error": last_error,
+                    },
+                    "warning": "Connected via AI Engine container fallback.",
+                }
+
+            return {
+                "status": "error",
+                "details": {"error": last_error or "Unreachable"},
+                "probe": {
+                    "selected": None,
+                    "attempted": candidates,
+                    "error": last_error or "Unreachable",
+                }
+            }
+        except Exception as e:
+            logger.debug("AI Engine Check Error: %s: %s", type(e).__name__, str(e))
+            return {
+                "status": "error",
+                "details": {"error": f"{type(e).__name__}: {str(e)}"},
+            }
+
+    import asyncio
+    local_ai, ai_engine = await asyncio.gather(check_local_ai(), check_ai_engine())
+
+    ai_engine_ok = ai_engine.get("status") == "connected"
+    local_ai_ok = local_ai.get("status") == "connected"
+
+    return {
+        "status": "healthy" if ai_engine_ok else "error",
+        "summary": {
+            "ai_engine_connected": ai_engine_ok,
+            "local_ai_connected": local_ai_ok,
+            "local_ai_required": False,
+        },
+        "local_ai_server": local_ai,
+        "ai_engine": ai_engine
+    }
+
+@router.get("/sessions")
+async def get_active_sessions():
+    """
+    Get active call sessions from AI Engine for topology visualization.
+    Returns list of active calls with provider and pipeline info.
+    """
+    try:
+        data = await _fetch_ai_engine_sessions_stats()
+        if data:
+            return {
+                "active_calls": data.get("active_calls", 0),
+                "sessions": data.get("sessions", []),
+                "reachable": True,
+            }
+    except Exception as e:
+        logger.debug("Could not fetch active sessions: %s", e)
+    
+    return {"active_calls": 0, "sessions": [], "reachable": False}
+
+@router.get("/directories")
+async def get_directory_health():
+    """
+    Check health of directories required for audio playback.
+    Returns status of media directory, symlink, and permissions.
+    """
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    ast_media_dir = os.getenv("AST_MEDIA_DIR", "")
+    in_docker = bool(os.path.exists("/.dockerenv") or os.getenv("DOCKER_CONTAINER", ""))
+    
+    host_media_root = os.path.join(project_root, "asterisk_media")
+    host_media_dir = os.path.join(project_root, "asterisk_media", "ai-generated")
+    asterisk_sounds_link = "/var/lib/asterisk/sounds/ai-generated"
+    container_media_dir = "/mnt/asterisk_media/ai-generated"
+    
+    checks = {
+        "media_dir_configured": {
+            "status": "unknown",
+            "configured_path": ast_media_dir,
+            "expected_path": container_media_dir,
+            "effective_path": ast_media_dir or container_media_dir,
+            "message": ""
+        },
+        "host_directory": {
+            "status": "unknown",
+            "path": container_media_dir if in_docker else host_media_dir,
+            "media_root": host_media_root,
+            "media_root_is_symlink": False,
+            "media_root_symlink_target": None,
+            "media_root_resolved": None,
+            "paths_checked": [host_media_dir, container_media_dir],
+            "exists": False,
+            "writable": False,
+            "message": ""
+        },
+        "asterisk_symlink": {
+            "status": "unknown",
+            "path": asterisk_sounds_link,
+            "exists": False,
+            "target": None,
+            "valid": False,
+            "message": ""
+        }
+    }
+    
+    if ast_media_dir:
+        if "ai-generated" in ast_media_dir:
+            checks["media_dir_configured"]["status"] = "ok"
+            checks["media_dir_configured"]["message"] = "Correctly configured"
+        else:
+            checks["media_dir_configured"]["status"] = "warning"
+            checks["media_dir_configured"]["message"] = "Missing 'ai-generated' subdirectory in path"
+    elif os.path.exists(container_media_dir):
+        checks["media_dir_configured"]["status"] = "ok"
+        checks["media_dir_configured"]["message"] = "Using default media directory"
+    else:
+        checks["media_dir_configured"]["status"] = "error"
+        checks["media_dir_configured"]["message"] = "AST_MEDIA_DIR not set in environment"
+    
+    try:
+        broken_media_root = False
+        if os.path.islink(host_media_root):
+            checks["host_directory"]["media_root_is_symlink"] = True
+            try:
+                checks["host_directory"]["media_root_symlink_target"] = os.readlink(host_media_root)
+            except OSError:
+                checks["host_directory"]["media_root_symlink_target"] = None
+            checks["host_directory"]["media_root_resolved"] = os.path.realpath(host_media_root)
+
+            if not os.path.exists(checks["host_directory"]["media_root_resolved"] or ""):
+                if in_docker and os.path.exists("/mnt/asterisk_media"):
+                    checks["host_directory"]["status"] = "warning"
+                    checks["host_directory"]["message"] = (
+                        "asterisk_media is a symlink but the container cannot verify its target path. "
+                        "This can be normal when Docker mounts the resolved host directory at /mnt/asterisk_media. "
+                        "If you see missing audio directories after a reboot, verify the host mount persists and restart containers."
+                    )
+                else:
+                    checks["host_directory"]["status"] = "error"
+                    checks["host_directory"]["message"] = (
+                        "asterisk_media is a symlink but its target is missing. "
+                        "This commonly happens after a reboot when the external media mount did not come up. "
+                        "Ensure the mount is persisted on the host (e.g., /etc/fstab or a systemd mount unit), "
+                        "then restart containers (or rerun preflight.sh on the host)."
+                    )
+                    broken_media_root = True
+
+        path_to_check = container_media_dir if in_docker else host_media_dir
+        if not broken_media_root and os.path.exists(path_to_check):
+            checks["host_directory"]["exists"] = True
+            test_file = os.path.join(path_to_check, ".write_test")
+            try:
+                with open(test_file, "w") as f:
+                    f.write("test")
+                os.remove(test_file)
+                checks["host_directory"]["writable"] = True
+                if checks["host_directory"]["status"] != "warning":
+                    checks["host_directory"]["status"] = "ok"
+                    checks["host_directory"]["message"] = "Directory exists and is writable"
+            except PermissionError:
+                checks["host_directory"]["status"] = "error"
+                checks["host_directory"]["message"] = "Directory exists but not writable"
+        elif not broken_media_root:
+            checks["host_directory"]["status"] = "error"
+            if in_docker:
+                checks["host_directory"]["message"] = f"Directory does not exist (checked: {path_to_check})"
+            else:
+                checks["host_directory"]["message"] = "Directory does not exist"
+    except Exception as e:
+        checks["host_directory"]["status"] = "error"
+        checks["host_directory"]["message"] = f"Error checking directory: {str(e)}"
+    
+    try:
+        if os.path.islink(asterisk_sounds_link):
+            checks["asterisk_symlink"]["exists"] = True
+            target = os.readlink(asterisk_sounds_link)
+            checks["asterisk_symlink"]["target"] = target
+            
+            if host_media_dir in target or target == host_media_dir:
+                checks["asterisk_symlink"]["valid"] = True
+                checks["asterisk_symlink"]["status"] = "ok"
+                checks["asterisk_symlink"]["message"] = f"Symlink valid → {target}"
+            else:
+                checks["asterisk_symlink"]["status"] = "warning"
+                checks["asterisk_symlink"]["message"] = f"Symlink points to {target}, expected {host_media_dir}"
+        elif os.path.exists(asterisk_sounds_link):
+            checks["asterisk_symlink"]["exists"] = True
+            if not in_docker and os.path.ismount(asterisk_sounds_link):
+                checks["asterisk_symlink"]["status"] = "ok"
+                checks["asterisk_symlink"]["valid"] = True
+                checks["asterisk_symlink"]["message"] = "Bind mount present (Asterisk can read generated audio)"
+            else:
+                checks["asterisk_symlink"]["status"] = "warning"
+                checks["asterisk_symlink"]["message"] = "Path exists but is not a symlink"
+        elif in_docker:
+            checks["asterisk_symlink"]["status"] = "ok"
+            checks["asterisk_symlink"]["message"] = "Cannot verify from Docker (symlink is on host)"
+            checks["asterisk_symlink"]["docker_note"] = True
+        else:
+            checks["asterisk_symlink"]["status"] = "error"
+            checks["asterisk_symlink"]["message"] = "Symlink does not exist"
+    except Exception as e:
+        checks["asterisk_symlink"]["status"] = "error"
+        checks["asterisk_symlink"]["message"] = f"Error checking symlink: {str(e)}"
+    
+    statuses = [c["status"] for c in checks.values()]
+    if all(s == "ok" for s in statuses):
+        overall = "healthy"
+    elif any(s == "error" for s in statuses):
+        overall = "error"
+    else:
+        overall = "warning"
+    
+    return {
+        "overall": overall,
+        "checks": checks
+    }
+
+@router.post("/directories/fix")
+async def fix_directory_issues():
+    """
+    Attempt to fix directory permission and symlink issues.
+    Note: Symlink creation requires host access - use preflight.sh for that.
+    """
+    import subprocess
+    
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    host_media_root = os.path.join(project_root, "asterisk_media")
+    host_media_dir = os.path.join(project_root, "asterisk_media", "ai-generated")
+    asterisk_sounds_link = "/var/lib/asterisk/sounds/ai-generated"
+    in_docker = bool(os.path.exists("/.dockerenv") or os.getenv("DOCKER_CONTAINER", ""))
+    
+    fixes_applied = []
+    errors = []
+    manual_steps = []
+
+    desired_gid = 995
+    try:
+        env_gid = (_dotenv_value("ASTERISK_GID") or "").strip()
+        if env_gid.isdigit():
+            desired_gid = int(env_gid)
+    except Exception:
+        desired_gid = 995
+    desired_uid = 1000
+
+    path_to_fix = "/mnt/asterisk_media/ai-generated" if in_docker else host_media_dir
+    
+    try:
+        if os.path.islink(host_media_root):
+            resolved = os.path.realpath(host_media_root)
+            if not os.path.exists(resolved):
+                if in_docker and os.path.exists("/mnt/asterisk_media"):
+                    logger.debug(
+                        "asterisk_media symlink target not visible inside container; ignoring (resolved=%s)",
+                        resolved,
+                    )
+                else:
+                    errors.append(
+                        f"asterisk_media points to missing target: {host_media_root} -> {resolved}"
+                    )
+                    manual_steps.append(
+                        "Ensure your external media mount persists across reboots (e.g., /etc/fstab or systemd mount unit), then restart containers."
+                    )
+                    manual_steps.append("Run on host: sudo ./preflight.sh --apply-fixes")
+                    return {
+                        "success": False,
+                        "fixes_applied": fixes_applied,
+                        "errors": errors,
+                        "manual_steps": manual_steps,
+                        "restart_required": False,
+                    }
+    except Exception:
+        logger.debug("Failed to inspect asterisk_media symlink target", exc_info=True)
+
+    if in_docker:
+        try:
+            client = docker.from_env()
+            container = client.containers.get("admin_ui")
+            mounts = container.attrs.get("Mounts", []) or []
+            host_project_path = None
+            for m in mounts:
+                if m.get("Destination") == "/app/project":
+                    host_project_path = m.get("Source")
+                    break
+
+            if host_project_path:
+                script = f"""
+set -eu
+mkdir -p /project/asterisk_media/ai-generated
+chown {desired_uid}:{desired_gid} /project/asterisk_media /project/asterisk_media/ai-generated || true
+chmod 2750 /project/asterisk_media /project/asterisk_media/ai-generated || true
+echo "media permissions fixed"
+"""
+                output = client.containers.run(
+                    "alpine:latest",
+                    command=["sh", "-c", script],
+                    volumes={host_project_path: {"bind": "/project", "mode": "rw"}},
+                    remove=True,
+                )
+                msg = (output.decode().strip() if output else "").strip()
+                if msg:
+                    fixes_applied.append(msg)
+            else:
+                manual_steps.append("Could not detect host project path for /app/project mount (admin_ui)")
+        except Exception:
+            logger.debug("Failed to apply host-side media permission fix via Docker", exc_info=True)
+            manual_steps.append("Run on host: sudo ./preflight.sh --apply-fixes")
+    
+    try:
+        os.makedirs(path_to_fix, exist_ok=True)
+        fixes_applied.append(f"Ensured directory exists: {path_to_fix}")
+    except Exception as e:
+        errors.append(f"Failed to create directory: {str(e)}")
+    
+    manual_steps.append("For permission alignment, run on host: sudo ./preflight.sh --apply-fixes")
+    
+    if in_docker:
+        manual_steps.append(
+            f"Run on host: sudo ln -sf {host_media_dir} {asterisk_sounds_link}"
+        )
+        manual_steps.append(
+            f"Or run: ./preflight.sh --apply-fixes"
+        )
+    else:
+        try:
+            if os.path.islink(asterisk_sounds_link):
+                os.unlink(asterisk_sounds_link)
+                fixes_applied.append(f"Removed old symlink: {asterisk_sounds_link}")
+            elif os.path.exists(asterisk_sounds_link):
+                errors.append(f"Cannot fix: {asterisk_sounds_link} exists and is not a symlink")
+            
+            if not os.path.exists(asterisk_sounds_link):
+                os.symlink(host_media_dir, asterisk_sounds_link)
+                fixes_applied.append(f"Created symlink: {asterisk_sounds_link} → {host_media_dir}")
+        except PermissionError:
+            try:
+                result = subprocess.run(
+                    ["sudo", "ln", "-sf", host_media_dir, asterisk_sounds_link],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    fixes_applied.append(f"Created symlink with sudo: {asterisk_sounds_link} → {host_media_dir}")
+                else:
+                    errors.append(f"Failed to create symlink with sudo: {result.stderr}")
+            except Exception as e:
+                errors.append(f"Failed to create symlink: {str(e)}")
+        except Exception as e:
+            errors.append(f"Failed to manage symlink: {str(e)}")
+    
+    env_file = os.path.join(project_root, ".env")
+    try:
+        result = upsert_env_vars(
+            env_file,
+            {"AST_MEDIA_DIR": "/mnt/asterisk_media/ai-generated"},
+            header="Auto-fix: media directory",
+        )
+        if result.added_keys:
+            fixes_applied.append("Added AST_MEDIA_DIR to .env (requires container restart)")
+        elif result.updated_keys:
+            fixes_applied.append("Updated AST_MEDIA_DIR in .env (requires container restart)")
+    except Exception as e:
+        errors.append(f"Failed to update .env: {str(e)}")
+    
+    return {
+        "success": len(errors) == 0,
+        "fixes_applied": fixes_applied,
+        "errors": errors,
+        "manual_steps": manual_steps if manual_steps else None,
+        "restart_required": any("restart" in f.lower() for f in fixes_applied)
+    }
+
+class PlatformCheck(BaseModel):
+    id: str
+    status: str
+    message: str
+    blocking: bool
+    action: dict = None
+
+class PlatformInfo(BaseModel):
+    os: dict
+    docker: dict
+    compose: dict
+    project: dict = None
+    selinux: dict = None
+    directories: dict
+    asterisk: dict = None
+
+class PlatformResponse(BaseModel):
+    platform: PlatformInfo
+    checks: List[PlatformCheck]
+    summary: dict
+
+_PLATFORMS_CACHE = None
+_PLATFORMS_CACHE_MTIME = None
+
+def _parse_semver(value: str) -> Optional[tuple[int, int, int]]:
+    """Extract first semantic version tuple from a string (vX.Y.Z or X.Y.Z)."""
+    m = re.search(r"\bv?(\d+)\.(\d+)\.(\d+)\b", value or "")
+    if not m:
+        return None
+    try:
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except Exception:
+        return None
+
+def _detect_latest_changelog_version(project_root: str) -> Optional[str]:
+    """
+    Parse the first released Keep-a-Changelog heading from CHANGELOG.md.
+
+    Expected format: `## [X.Y.Z] - YYYY-MM-DD`
+    """
+    try:
+        changelog_path = os.path.join(project_root, "CHANGELOG.md")
+        if not os.path.exists(changelog_path):
+            return None
+        with open(changelog_path, "r", encoding="utf-8", errors="ignore") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                m = re.match(r"^## \[(\d+\.\d+\.\d+)\]\s*-\s*\d{4}-\d{2}-\d{2}$", line)
+                if m:
+                    return f"v{m.group(1)}"
+    except Exception:
+        return None
+    return None
+
+def _detect_project_version(project_root: str) -> dict:
+    """
+    Best-effort project version detection for Admin UI.
+
+    Preference order:
+      1) AAVA_PROJECT_VERSION env var (operator override)
+      2) CHANGELOG.md latest release heading (`## [X.Y.Z] - YYYY-MM-DD`)
+      3) git describe (when repo checkout is present)
+      4) Parse README.md for a `vX.Y.Z` token
+      5) unknown
+    """
+    override = (os.getenv("AAVA_PROJECT_VERSION") or "").strip()
+    if override:
+        return {"version": override, "source": "env"}
+
+    changelog_version = _detect_latest_changelog_version(project_root)
+    git_version = None
+
+    try:
+        proc = subprocess.run(
+            [
+                "git",
+                "-c",
+                f"safe.directory={project_root}",
+                "-C",
+                project_root,
+                "describe",
+                "--tags",
+                "--always",
+                "--dirty",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=1.5,
+        )
+        if proc.returncode == 0:
+            version = (proc.stdout or "").strip()
+            if version:
+                git_version = version
+    except Exception:
+        pass
+
+    if changelog_version:
+        changelog_semver = _parse_semver(changelog_version)
+        git_semver = _parse_semver(git_version or "")
+
+        if not git_version or "-" in git_version:
+            if not git_semver or (changelog_semver and changelog_semver >= git_semver):
+                return {"version": changelog_version, "source": "changelog"}
+        if changelog_semver and git_semver and changelog_semver > git_semver:
+            return {"version": changelog_version, "source": "changelog"}
+
+    if git_version:
+        return {"version": git_version, "source": "git"}
+
+    try:
+        readme_path = os.path.join(project_root, "README.md")
+        if os.path.exists(readme_path):
+            with open(readme_path, "r", encoding="utf-8", errors="ignore") as f:
+                text = f.read()
+            m = re.search(r"\bv\d+\.\d+\.\d+\b", text)
+            if m:
+                return {"version": m.group(0), "source": "readme"}
+    except Exception:
+        pass
+
+    return {"version": "unknown", "source": "unknown"}
+
+def _github_docs_url(path_or_url: Optional[str]) -> Optional[str]:
+    if not path_or_url:
+        return None
+    if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
+        return path_or_url
+    base = os.getenv(
+        "AAVA_DOCS_BASE_URL",
+        "https://github.com/hkjarral/AVA-AI-Voice-Agent-for-Asterisk/blob/main/",
+    )
+    return base.rstrip("/") + "/" + path_or_url.lstrip("/")
+
+def _load_platforms_yaml() -> Optional[dict]:
+    global _PLATFORMS_CACHE, _PLATFORMS_CACHE_MTIME
+
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    path = os.path.join(project_root, "config", "platforms.yaml")
+    if not os.path.exists(path):
+        return None
+
+    try:
+        mtime = os.path.getmtime(path)
+        if _PLATFORMS_CACHE is not None and _PLATFORMS_CACHE_MTIME == mtime:
+            return _PLATFORMS_CACHE
+    except Exception:
+        mtime = None
+
+    try:
+        with open(path, "r") as f:
+            data = yaml.safe_load(f) or {}
+        _PLATFORMS_CACHE = data
+        _PLATFORMS_CACHE_MTIME = mtime
+        return data
+    except Exception:
+        return None
+
+def _deep_merge_dict(base: dict, override: dict) -> dict:
+    out = dict(base or {})
+    for k, v in (override or {}).items():
+        if k == "inherit":
+            continue
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = _deep_merge_dict(out.get(k), v)
+        else:
+            out[k] = v
+    return out
+
+def _resolve_platform(platforms: dict, platform_key: str) -> Optional[dict]:
+    if not platforms or not platform_key:
+        return None
+    node = platforms.get(platform_key)
+    if not isinstance(node, dict):
+        return None
+
+    parent_key = node.get("inherit")
+    if parent_key:
+        parent = _resolve_platform(platforms, parent_key) or {}
+        return _deep_merge_dict(parent, node)
+    return dict(node)
+
+def _select_platform_key(platforms: Optional[dict], os_id: str, os_family: str) -> Optional[str]:
+    if not platforms:
+        return None
+
+    if os_id and os_id in platforms and isinstance(platforms.get(os_id), dict):
+        if platforms[os_id].get("name") or platforms[os_id].get("docker"):
+            return os_id
+
+    for key, node in platforms.items():
+        if not isinstance(node, dict):
+            continue
+        ids = node.get("os_ids") or []
+        if isinstance(ids, list) and os_id in ids:
+            return key
+
+    if os_family and os_family in platforms and isinstance(platforms.get(os_family), dict):
+        return os_family
+
+    return None
+
+def _detect_os():
+    """Detect OS from /etc/os-release or container environment."""
+    os_info = {
+        "id": "unknown",
+        "version": "unknown", 
+        "family": "unknown",
+        "arch": os.uname().machine,
+        "is_eol": False,
+        "in_container": os.path.exists("/.dockerenv")
+    }
+    
+    os_release_paths = [
+        "/host/etc/os-release",
+        "/etc/os-release"
+    ]
+    
+    for path in os_release_paths:
+        if os.path.exists(path):
+            try:
+                with open(path) as f:
+                    for line in f:
+                        if line.startswith("ID="):
+                            os_info["id"] = line.split("=")[1].strip().strip('"')
+                        elif line.startswith("VERSION_ID="):
+                            os_info["version"] = line.split("=")[1].strip().strip('"')
+                
+                os_id = os_info["id"]
+                if os_id in ["ubuntu", "debian", "linuxmint"]:
+                    os_info["family"] = "debian"
+                elif os_id in ["centos", "rhel", "rocky", "almalinux", "fedora"]:
+                    os_info["family"] = "rhel"
+                
+                eol_versions = {
+                    "ubuntu": ["18.04", "20.04"],
+                    "debian": ["9", "10"],
+                    "centos": ["7", "8"]
+                }
+                if os_info["version"] in eol_versions.get(os_id, []):
+                    os_info["is_eol"] = True
+                
+                break
+            except Exception:
+                pass
+    
+    return os_info
+
+def _detect_docker():
+    """Detect Docker version and mode."""
+    sock_path = "/var/run/docker.sock"
+    socket_present = os.path.exists(sock_path)
+    docker_info = {
+        "installed": False,
+        "reachable": False,
+        "version": None,
+        "api_version": None,
+        "mode": "unknown",
+        "status": "error",
+        "message": "Docker not detected",
+        "socket_present": socket_present,
+        "socket_path": sock_path,
+        "socket_gid": None,
+        "socket_mode": None,
+        "process_uid": os.getuid(),
+        "process_gid": os.getgid(),
+        "process_groups": list(os.getgroups()),
+        "cli_present": shutil.which("docker") is not None,
+        "is_docker_desktop": False,
+        "permission_denied": False,
+        "needs_docker_gid": None,
+    }
+
+    if socket_present:
+        try:
+            st = os.stat(sock_path)
+            docker_info["socket_gid"] = int(getattr(st, "st_gid", 0))
+            docker_info["socket_mode"] = oct(getattr(st, "st_mode", 0) & 0o777)
+            if docker_info["socket_gid"] is not None:
+                docker_info["needs_docker_gid"] = docker_info["socket_gid"] not in set(docker_info["process_groups"] or [])
+        except Exception:
+            pass
+    
+    try:
+        client = docker.from_env()
+        version_info = client.version()
+        docker_info["installed"] = True
+        docker_info["reachable"] = True
+        docker_info["version"] = version_info.get("Version", "unknown")
+        docker_info["api_version"] = version_info.get("ApiVersion", "unknown")
+        docker_info["status"] = "ok"
+        docker_info["message"] = None
+
+        try:
+            info = client.info()
+            operating_system = info.get("OperatingSystem") or ""
+            docker_info["operating_system"] = operating_system or None
+            docker_info["engine_arch"] = info.get("Architecture") or None
+            docker_info["os_type"] = info.get("OSType") or None
+            docker_info["is_docker_desktop"] = "Docker Desktop" in operating_system
+        except Exception:
+            pass
+        
+        try:
+            major = int(docker_info["version"].split(".")[0])
+            if major < 20:
+                docker_info["status"] = "error"
+                docker_info["message"] = "Docker version too old (minimum: 20.10)"
+            elif major < 25:
+                docker_info["status"] = "warning"
+                docker_info["message"] = "Upgrade to Docker 25.x+ recommended"
+        except:
+            pass
+        
+        docker_host = os.environ.get("DOCKER_HOST", "")
+        if "rootless" in docker_host or "/run/user/" in docker_host:
+            docker_info["mode"] = "rootless"
+        else:
+            docker_info["mode"] = "rootful"
+            
+    except Exception as e:
+        msg = str(e) if e is not None else "unknown error"
+        docker_info["message"] = msg
+        docker_info["reachable"] = False
+
+        lowered = msg.lower()
+        if "permission denied" in lowered or "errno 13" in lowered:
+            docker_info["installed"] = docker_info["cli_present"] or docker_info["socket_present"]
+            docker_info["status"] = "error"
+            docker_info["permission_denied"] = True
+            docker_info["message"] = "Docker daemon not accessible from Admin UI (permission denied to docker.sock)"
+    
+    return docker_info
+
+def _detect_compose():
+    """Detect Docker Compose version."""
+    import subprocess
+    
+    compose_info = {
+        "installed": False,
+        "version": None,
+        "type": "unknown",
+        "status": "error",
+        "message": "Docker Compose not detected"
+    }
+
+    def _parse_version(text: str) -> str:
+        import re
+
+        if not text:
+            return ""
+        text = text.strip()
+        m = re.search(r"\bv?(\d+\.\d+\.\d+)\b", text)
+        return m.group(1) if m else ""
+
+    def _classify_version(version: str) -> None:
+        try:
+            parts = version.split(".")
+            major = int(parts[0])
+            minor = int(parts[1]) if len(parts) > 1 else 0
+        except Exception:
+            return
+
+        if major > 2:
+            return
+        if major == 2:
+            if minor < 20:
+                compose_info["status"] = "warning"
+                compose_info["message"] = "Upgrade to Compose 2.20+ recommended"
+        elif major == 1:
+            compose_info["status"] = "error"
+            compose_info["message"] = "Compose v1 is EOL and unsupported"
+
+    try:
+        client = docker.from_env()
+        versions = []
+        for container in client.containers.list():
+            labels = container.labels or {}
+            v = (labels.get("com.docker.compose.version") or "").strip().lstrip("v")
+            if v:
+                versions.append(v)
+
+        if versions:
+            from collections import Counter
+
+            version = Counter(versions).most_common(1)[0][0]
+            compose_info["installed"] = True
+            compose_info["version"] = version
+            compose_info["type"] = "host_label"
+            compose_info["status"] = "ok"
+            compose_info["message"] = None
+            _classify_version(version)
+            return compose_info
+    except Exception:
+        pass
+
+    try:
+        compose_cmd = get_docker_compose_cmd()
+        result = subprocess.run(
+            compose_cmd + ["version", "--short"],
+            capture_output=True, text=True, timeout=5
+        )
+        out = (result.stdout or "").strip()
+        if result.returncode != 0 or not out:
+            result = subprocess.run(
+                compose_cmd + ["version"],
+                capture_output=True, text=True, timeout=5
+            )
+            out = (result.stdout or "") + "\n" + (result.stderr or "")
+
+        version = _parse_version(out)
+        if version:
+            compose_info["installed"] = True
+            compose_info["version"] = version
+            compose_info["status"] = "ok"
+            compose_info["message"] = None
+
+            if len(compose_cmd) >= 2 and compose_cmd[-1] == "compose":
+                compose_info["type"] = "plugin"
+            else:
+                compose_info["type"] = "standalone"
+
+            _classify_version(version)
+            return compose_info
+    except Exception:
+        pass
+    
+    return compose_info
+
+def _detect_selinux():
+    """Detect SELinux status."""
+    selinux_info = {
+        "present": False,
+        "mode": None,
+        "tools_installed": False
+    }
+    
+    if os.path.exists("/sys/fs/selinux"):
+        selinux_info["present"] = True
+
+        try:
+            enforce_path = "/sys/fs/selinux/enforce"
+            if os.path.exists(enforce_path):
+                with open(enforce_path, "r") as f:
+                    val = f.read().strip()
+                selinux_info["mode"] = "enforcing" if val == "1" else "permissive"
+        except Exception:
+            pass
+        
+        try:
+            import subprocess
+            result = subprocess.run(["getenforce"], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                selinux_info["mode"] = result.stdout.strip().lower()
+        except:
+            pass
+        
+        try:
+            import subprocess
+            result = subprocess.run(["which", "semanage"], capture_output=True, timeout=5)
+            selinux_info["tools_installed"] = result.returncode == 0
+        except:
+            pass
+    
+    return selinux_info
+
+def _detect_directories():
+    """Check required directories."""
+    media_dir = os.environ.get("AST_MEDIA_DIR", "/mnt/asterisk_media/ai-generated")
+    in_container = os.path.exists("/.dockerenv")
+    
+    container_media_path = "/app/media" if in_container else media_dir
+    
+    paths_to_check = [media_dir, container_media_path, "/mnt/asterisk_media/ai-generated"]
+    
+    exists = False
+    writable = False
+    actual_path = media_dir
+    
+    for path in paths_to_check:
+        if os.path.exists(path):
+            exists = True
+            writable = os.access(path, os.W_OK)
+            actual_path = path
+            break
+    
+    if in_container and not exists:
+        try:
+            client = docker.from_env()
+            for container in client.containers.list():
+                if container.name in ["ai_engine", "admin_ui"]:
+                    mounts = container.attrs.get("Mounts", [])
+                    for mount in mounts:
+                        if "asterisk_media" in mount.get("Source", "") or "ai-generated" in mount.get("Source", ""):
+                            exists = True
+                            writable = True
+                            actual_path = mount.get("Source", media_dir)
+                            break
+        except:
+            pass
+    
+    dir_info = {
+        "media": {
+            "path": actual_path,
+            "exists": exists,
+            "writable": writable,
+            "status": "ok" if (exists and writable) else "warning",
+            "in_container": in_container
+        }
+    }
+    
+    return dir_info
+
+def _detect_asterisk():
+    """Detect Asterisk installation."""
+    asterisk_info = {
+        "detected": False,
+        "version": None,
+        "config_dir": None,
+        "freepbx": {
+            "detected": False,
+            "version": None
+        }
+    }
+    
+    asterisk_paths = ["/etc/asterisk", "/usr/local/etc/asterisk"]
+    for path in asterisk_paths:
+        if os.path.exists(path) and os.path.exists(os.path.join(path, "asterisk.conf")):
+            asterisk_info["detected"] = True
+            asterisk_info["config_dir"] = path
+            break
+    
+    try:
+        import subprocess
+        result = subprocess.run(["asterisk", "-V"], capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            asterisk_info["version"] = result.stdout.strip()
+    except:
+        pass
+    
+    if os.path.exists("/etc/freepbx.conf") or os.path.exists("/etc/sangoma/pbx"):
+        asterisk_info["freepbx"]["detected"] = True
+        try:
+            import subprocess
+            result = subprocess.run(["fwconsole", "-V"], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                asterisk_info["freepbx"]["version"] = result.stdout.strip()
+        except:
+            pass
+    
+    return asterisk_info
+
+def _check_port(port: int, is_own_port: bool = False) -> dict:
+    """Check if a port is in use and by what."""
+    import socket
+    
+    result = {
+        "port": port,
+        "in_use": False,
+        "is_own_port": is_own_port,
+        "status": "ok"
+    }
+    
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            connect_result = s.connect_ex(('localhost', port))
+            result["in_use"] = (connect_result == 0)
+    except:
+        pass
+    
+    if is_own_port and result["in_use"]:
+        result["status"] = "ok"
+    elif result["in_use"]:
+        result["status"] = "warning"
+    
+    return result
+
+def _build_checks(os_info, docker_info, compose_info, selinux_info, dir_info, asterisk_info, platform_cfg: Optional[dict]) -> List[dict]:
+    """Build list of checks with status and actions."""
+    checks = []
+    docker_cfg = (platform_cfg or {}).get("docker", {}) if isinstance(platform_cfg, dict) else {}
+    compose_cfg = (platform_cfg or {}).get("compose", {}) if isinstance(platform_cfg, dict) else {}
+    selinux_cfg = (platform_cfg or {}).get("selinux", {}) if isinstance(platform_cfg, dict) else {}
+    firewall_cfg = (platform_cfg or {}).get("firewall", {}) if isinstance(platform_cfg, dict) else {}
+    
+    if os_info["arch"] != "x86_64":
+        if docker_info.get("is_docker_desktop"):
+            checks.append({
+                "id": "architecture",
+                "status": "warning",
+                "message": f"Architecture: {os_info['arch']} (Tier 3 best-effort on Docker Desktop; production requires x86_64 Linux)",
+                "blocking": False,
+                "action": None
+            })
+        else:
+            checks.append({
+                "id": "architecture",
+                "status": "error",
+                "message": f"Unsupported architecture: {os_info['arch']} (x86_64 required)",
+                "blocking": True,
+                "action": None
+            })
+    else:
+        checks.append({
+            "id": "architecture",
+            "status": "ok",
+            "message": f"Architecture: {os_info['arch']}",
+            "blocking": False,
+            "action": None
+        })
+
+    if docker_info.get("is_docker_desktop"):
+        checks.append({
+            "id": "tier3_docker_desktop",
+            "status": "warning",
+            "message": "Docker Desktop detected (Tier 3 best-effort). If services are running but show as unreachable, set HEALTH_CHECK_* URLs and ensure DOCKER_SOCK is correct.",
+            "blocking": False,
+            "action": {
+                "type": "link",
+                "label": "Troubleshooting (Tier 3 / Docker Desktop)",
+                "value": _github_docs_url("docs/TROUBLESHOOTING_GUIDE.md"),
+            }
+        })
+    
+    if os_info["is_eol"]:
+        checks.append({
+            "id": "os_eol",
+            "status": "warning",
+            "message": f"{os_info['id']} {os_info['version']} is EOL or nearing EOL",
+            "blocking": False,
+            "action": {
+                "type": "link",
+                "label": "Upgrade Guide",
+                "value": "https://docs.docker.com/engine/install/"
+            }
+        })
+    
+    if not docker_info["installed"]:
+        docs_url = _github_docs_url(docker_cfg.get("aava_docs")) or "https://docs.docker.com/engine/install/"
+        if not docker_info.get("socket_present", True):
+            checks.append({
+                "id": "docker_socket",
+                "status": "error",
+                "message": "Docker socket not accessible to Admin UI (rootless Docker likely)",
+                "blocking": True,
+                "action": {
+                    "type": "command",
+                    "label": "Set DOCKER_SOCK and restart admin_ui",
+                    "value": "export DOCKER_SOCK=/run/user/$(id -u)/docker.sock && docker compose -p asterisk-ai-voice-agent up -d --force-recreate admin_ui",
+                    "docs_url": _github_docs_url(docker_cfg.get("rootless_docs")) or _github_docs_url("docs/CROSS_PLATFORM_PLAN.md"),
+                    "docs_label": "Rootless Docker docs",
+                }
+            })
+        else:
+            install_cmd = (docker_cfg.get("install_cmd") or "curl -fsSL https://get.docker.com | sh").strip()
+            checks.append({
+                "id": "docker_installed",
+                "status": "error",
+                "message": "Docker not detected by Admin UI",
+                "blocking": True,
+                "action": {
+                    "type": "command",
+                    "label": "Install Docker",
+                    "value": install_cmd,
+                    "docs_url": docs_url,
+                    "docs_label": "AAVA installation docs",
+                }
+            })
+    elif docker_info.get("permission_denied"):
+        checks.append({
+            "id": "docker_socket_perms",
+            "status": "error",
+            "message": (
+                "Admin UI cannot access Docker socket (permission denied). "
+                f"Socket gid={docker_info.get('socket_gid')}, process groups={docker_info.get('process_groups')}"
+            ),
+            "blocking": True,
+            "action": {
+                "type": "command",
+                "label": "Set DOCKER_GID and recreate admin_ui",
+                "value": "\n".join([
+                    "ls -ln /var/run/docker.sock",
+                    "DOCKER_GID=$(ls -ln /var/run/docker.sock | awk '{print $4}')",
+                    "grep -qE '^[# ]*DOCKER_GID=' .env && sed -i.bak -E \"s/^[# ]*DOCKER_GID=.*/DOCKER_GID=$DOCKER_GID/\" .env || echo \"DOCKER_GID=$DOCKER_GID\" >> .env",
+                    "docker compose -p asterisk-ai-voice-agent up -d --force-recreate admin_ui",
+                ]),
+                "docs_url": _github_docs_url("docs/TROUBLESHOOTING_GUIDE.md"),
+                "docs_label": "Troubleshooting guide",
+            },
+        })
+    elif docker_info["status"] == "error":
+        docs_url = _github_docs_url(docker_cfg.get("aava_docs")) or "https://docs.docker.com/engine/install/"
+        start_cmd = docker_cfg.get("start_cmd") or "sudo systemctl start docker"
+        rootless_start_cmd = docker_cfg.get("rootless_start_cmd")
+        checks.append({
+            "id": "docker_version",
+            "status": "error",
+            "message": docker_info["message"],
+            "blocking": True,
+            "action": {
+                "type": "command",
+                "label": "Start Docker (or upgrade if needed)",
+                "value": start_cmd,
+                "rootless_value": rootless_start_cmd,
+                "docs_url": docs_url,
+                "docs_label": "AAVA installation docs",
+            }
+        })
+    elif docker_info["status"] == "warning":
+        checks.append({
+            "id": "docker_version",
+            "status": "warning",
+            "message": docker_info["message"],
+            "blocking": False,
+            "action": None
+        })
+    else:
+        checks.append({
+            "id": "docker_version",
+            "status": "ok",
+            "message": f"Docker {docker_info['version']}",
+            "blocking": False,
+            "action": None
+        })
+    
+    if not compose_info["installed"]:
+        docs_url = _github_docs_url(compose_cfg.get("aava_docs")) or "https://docs.docker.com/compose/install/"
+        install_cmd = (compose_cfg.get("install_cmd") or "sudo apt-get install -y docker-compose-plugin").strip()
+        checks.append({
+            "id": "compose_installed",
+            "status": "error",
+            "message": "Docker Compose not installed",
+            "blocking": True,
+            "action": {
+                "type": "command",
+                "label": "Install Docker Compose",
+                "value": install_cmd,
+                "docs_url": docs_url,
+                "docs_label": "AAVA installation docs",
+            }
+        })
+    elif compose_info["status"] == "error":
+        docs_url = _github_docs_url(compose_cfg.get("aava_docs")) or "https://docs.docker.com/compose/install/"
+        upgrade_cmd = (compose_cfg.get("upgrade_cmd") or compose_cfg.get("install_cmd") or "").strip()
+        checks.append({
+            "id": "compose_version",
+            "status": "error",
+            "message": compose_info["message"],
+            "blocking": True,
+            "action": {
+                "type": "command",
+                "label": "Upgrade Docker Compose",
+                "value": upgrade_cmd or "sudo apt-get update && sudo apt-get install -y docker-compose-plugin",
+                "docs_url": docs_url,
+                "docs_label": "AAVA installation docs",
+            }
+        })
+    elif compose_info["status"] == "warning":
+        checks.append({
+            "id": "compose_version",
+            "status": "warning",
+            "message": compose_info["message"],
+            "blocking": False,
+            "action": None
+        })
+    else:
+        checks.append({
+            "id": "compose_version",
+            "status": "ok",
+            "message": f"Docker Compose {compose_info['version']}",
+            "blocking": False,
+            "action": None
+        })
+    
+    media = dir_info["media"]
+    if not media["exists"]:
+        checks.append({
+            "id": "media_directory",
+            "status": "warning",
+            "message": f"Media directory missing: {media['path']}",
+            "blocking": False,
+            "action": {
+                "type": "command",
+                "label": "Create Directory",
+                "value": f"sudo mkdir -p {media['path']} && sudo chown -R $(id -u):$(id -g) {media['path']}",
+                "rootless_value": f"mkdir -p {media['path']}",
+                "docs_url": _github_docs_url((platform_cfg or {}).get("docker", {}).get("aava_docs")) or _github_docs_url("docs/INSTALLATION.md"),
+                "docs_label": "Media directory docs",
+            }
+        })
+    elif not media["writable"]:
+        checks.append({
+            "id": "media_directory",
+            "status": "warning",
+            "message": f"Media directory not writable: {media['path']}",
+            "blocking": False,
+            "action": {
+                "type": "command",
+                "label": "Fix Permissions",
+                "value": f"sudo chown -R $(id -u):$(id -g) {media['path']}",
+                "rootless_value": None,
+                "docs_url": _github_docs_url((platform_cfg or {}).get("docker", {}).get("aava_docs")) or _github_docs_url("docs/INSTALLATION.md"),
+                "docs_label": "Media directory docs",
+            }
+        })
+    else:
+        checks.append({
+            "id": "media_directory",
+            "status": "ok",
+            "message": f"Media directory: {media['path']}",
+            "blocking": False,
+            "action": None
+        })
+    
+    if selinux_info["present"] and selinux_info["mode"] == "enforcing":
+        if not selinux_info["tools_installed"]:
+            docs_url = _github_docs_url(selinux_cfg.get("aava_docs")) or _github_docs_url("docs/INSTALLATION.md")
+            install_cmd = (selinux_cfg.get("tools_install_cmd") or "sudo dnf install -y policycoreutils-python-utils").strip()
+            checks.append({
+                "id": "selinux",
+                "status": "warning",
+                "message": "SELinux enforcing but semanage not installed",
+                "blocking": False,
+                "action": {
+                    "type": "command",
+                    "label": "Install SELinux Tools",
+                    "value": install_cmd,
+                    "docs_url": docs_url,
+                    "docs_label": "SELinux docs",
+                }
+            })
+        else:
+            docs_url = _github_docs_url(selinux_cfg.get("aava_docs")) or _github_docs_url("docs/INSTALLATION.md")
+            context_cmd_tmpl = selinux_cfg.get("context_cmd") or "sudo semanage fcontext -a -t container_file_t '{path}(/.*)?'"
+            restore_cmd_tmpl = selinux_cfg.get("restore_cmd") or "sudo restorecon -Rv {path}"
+            ctx_cmd = context_cmd_tmpl.format(path=media["path"])
+            restore_cmd = restore_cmd_tmpl.format(path=media["path"])
+            checks.append({
+                "id": "selinux",
+                "status": "warning",
+                "message": "SELinux enforcing - context fix may be needed",
+                "blocking": False,
+                "action": {
+                    "type": "command",
+                    "label": "Fix SELinux Context",
+                    "value": f"{ctx_cmd} && {restore_cmd}",
+                    "docs_url": docs_url,
+                    "docs_label": "SELinux docs",
+                }
+            })
+    elif selinux_info["present"]:
+        checks.append({
+            "id": "selinux",
+            "status": "ok",
+            "message": f"SELinux: {selinux_info['mode'] or 'disabled'}",
+            "blocking": False,
+            "action": None
+        })
+    
+    port_check = _check_port(3003, is_own_port=True)
+    checks.append({
+        "id": "port_3003",
+        "status": "ok",
+        "message": "Admin UI port 3003 active",
+        "blocking": False,
+        "action": None
+    })
+    
+    if asterisk_info["detected"]:
+        checks.append({
+            "id": "asterisk",
+            "status": "ok",
+            "message": f"Asterisk config: {asterisk_info['config_dir']}",
+            "blocking": False,
+            "action": None
+        })
+        if asterisk_info["freepbx"]["detected"]:
+            checks.append({
+                "id": "freepbx",
+                "status": "ok",
+                "message": f"FreePBX: {asterisk_info['freepbx']['version'] or 'detected'}",
+                "blocking": False,
+                "action": None
+            })
+    
+    return checks
+
+@router.get("/platform")
+async def get_platform():
+    """
+    Get platform detection and check results.
+    AAVA-126: Cross-Platform Support
+    """
+    os_info = _detect_os()
+    docker_info = _detect_docker()
+    compose_info = _detect_compose()
+    selinux_info = _detect_selinux()
+    dir_info = _detect_directories()
+    asterisk_info = _detect_asterisk()
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    project_info = _detect_project_version(project_root)
+
+    platforms = _load_platforms_yaml()
+    platform_key = _select_platform_key(platforms, os_info.get("id"), os_info.get("family"))
+    platform_cfg = _resolve_platform(platforms or {}, platform_key) if platform_key else None
+    if isinstance(platform_cfg, dict):
+        platform_cfg["_key"] = platform_key
+
+    checks = _build_checks(os_info, docker_info, compose_info, selinux_info, dir_info, asterisk_info, platform_cfg)
+    
+    passed = sum(1 for c in checks if c["status"] == "ok")
+    warnings = sum(1 for c in checks if c["status"] == "warning")
+    errors = sum(1 for c in checks if c["status"] == "error")
+    blocking = sum(1 for c in checks if c.get("blocking", False))
+    
+    return {
+        "platform": {
+            "os": os_info,
+            "docker": docker_info,
+            "compose": compose_info,
+            "project": project_info,
+            "selinux": selinux_info,
+            "directories": dir_info,
+            "asterisk": asterisk_info,
+            "platform_key": platform_key,
+        },
+        "checks": checks,
+        "summary": {
+            "total_checks": len(checks),
+            "passed": passed,
+            "warnings": warnings,
+            "errors": errors,
+            "blocking_errors": blocking,
+            "ready": blocking == 0
+        }
+    }
+
+@router.post("/preflight")
+async def run_preflight():
+    """
+    Re-run preflight checks and return fresh results.
+    AAVA-126: Cross-Platform Support
+    """
+    return await get_platform()
+
+class ContainerAction(BaseModel):
+    containers: List[str] = None
+
+@router.post("/containers/start")
+async def start_containers(action: ContainerAction = None):
+    """Start containers."""
+    import subprocess
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    
+    cmd = ["docker", "compose", "up", "-d"]
+    if action and action.containers:
+        cmd.extend(action.containers)
+    
+    try:
+        result = subprocess.run(cmd, cwd=project_root, capture_output=True, text=True, timeout=120)
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout or result.stderr
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/containers/stop")
+async def stop_containers(action: ContainerAction = None):
+    """Stop containers."""
+    import subprocess
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    
+    cmd = ["docker", "compose", "stop"]
+    if action and action.containers:
+        cmd.extend(action.containers)
+    
+    try:
+        result = subprocess.run(cmd, cwd=project_root, capture_output=True, text=True, timeout=120)
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout or result.stderr
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/containers/restart-all")
+async def restart_all_containers():
+    """Restart all containers."""
+    import subprocess
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    
+    try:
+        subprocess.run(["docker", "compose", "stop"], cwd=project_root, timeout=60)
+        result = subprocess.run(["docker", "compose", "up", "-d"], cwd=project_root, capture_output=True, text=True, timeout=120)
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout or result.stderr
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AriTestRequest(BaseModel):
+    host: str
+    port: int = 8088
+    username: str
+    password: str
+    scheme: str = "http"
+    ssl_verify: bool = True
+
+class AriExtensionStatusResponse(BaseModel):
+    success: bool
+    source: str = "unknown"
+    status: str = "unknown"
+    state: str = ""
+    device_state_id: str = ""
+    endpoint_tech: str = ""
+    endpoint_resource: str = ""
+    error: str = ""
+
+_ALLOWED_ARI_TECHS = {"PJSIP", "SIP", "IAX2", "DAHDI", "LOCAL"}
+
+def _normalize_ari_tech(value: str) -> str:
+    tech = (value or "").strip().upper()
+    if not tech or tech == "AUTO":
+        return ""
+    if tech not in _ALLOWED_ARI_TECHS:
+        return ""
+    return tech
+
+def _ari_env_settings() -> dict:
+    """
+    Resolve ARI connection settings.
+
+    Prefer the on-disk `.env` file (always up-to-date after wizard/UI saves)
+    so the admin_ui never needs a container recreate just to pick up new ARI
+    credentials.  Fall back to container environment variables for anything
+    not yet written to `.env`.
+    """
+    host = (_dotenv_value("ASTERISK_HOST") or os.environ.get("ASTERISK_HOST") or "127.0.0.1").strip()
+    scheme = (_dotenv_value("ASTERISK_ARI_SCHEME") or os.environ.get("ASTERISK_ARI_SCHEME") or "http").strip()
+    port_raw = (_dotenv_value("ASTERISK_ARI_PORT") or os.environ.get("ASTERISK_ARI_PORT") or "8088").strip()
+    user = (
+        _dotenv_value("ASTERISK_ARI_USERNAME")
+        or _dotenv_value("ARI_USERNAME")
+        or os.environ.get("ASTERISK_ARI_USERNAME")
+        or os.environ.get("ARI_USERNAME")
+        or ""
+    ).strip()
+    password = (
+        _dotenv_value("ASTERISK_ARI_PASSWORD")
+        or _dotenv_value("ARI_PASSWORD")
+        or os.environ.get("ASTERISK_ARI_PASSWORD")
+        or os.environ.get("ARI_PASSWORD")
+        or ""
+    ).strip()
+    ssl_verify_raw = (_dotenv_value("ASTERISK_ARI_SSL_VERIFY") or os.environ.get("ASTERISK_ARI_SSL_VERIFY") or "true").strip().lower()
+    ssl_verify = ssl_verify_raw not in ("0", "false", "no", "off")
+    try:
+        port = int(port_raw)
+    except Exception:
+        port = 8088
+
+    return {
+        "host": host,
+        "scheme": scheme,
+        "port": port,
+        "username": user,
+        "password": password,
+        "ssl_verify": ssl_verify,
+    }
+
+def _extract_device_state_id(dial_string: str, device_state_tech: str, extension_key: str) -> str:
+    s = (dial_string or "").strip()
+    if s:
+        m = re.search(r"(?i)\b(PJSIP|SIP|IAX2|DAHDI|LOCAL)\s*/\s*(\d+)\b", s)
+        if m:
+            tech = str(m.group(1)).upper()
+            num = str(m.group(2))
+            return f"{tech}/{num}"
+    tech = _normalize_ari_tech(device_state_tech)
+    key = (extension_key or "").strip()
+    if tech and key.isdigit():
+        return f"{tech}/{key}"
+    return ""
+
+def _extract_endpoint(dial_string: str, device_state_tech: str, extension_key: str) -> tuple[str, str]:
+    s = (dial_string or "").strip()
+    if s:
+        m = re.search(r"(?i)\b(PJSIP|SIP|IAX2|DAHDI|LOCAL)\s*/\s*(\d+)\b", s)
+        if m:
+            tech = str(m.group(1)).upper()
+            num = str(m.group(2))
+            return (tech, num)
+    tech = _normalize_ari_tech(device_state_tech)
+    key = (extension_key or "").strip()
+    if tech and key.isdigit():
+        return (tech, key)
+    return ("", "")
+
+def _classify_device_state(state: str) -> str:
+    s = (state or "").strip().upper()
+    if s in ("NOT_INUSE",):
+        return "available"
+    if s in ("INUSE", "BUSY", "RINGING", "RINGINUSE", "ONHOLD"):
+        return "busy"
+    if not s:
+        return "unknown"
+    if s in ("UNAVAILABLE", "UNKNOWN", "INVALID"):
+        return "unknown"
+    return "unknown"
+
+@router.post("/test-ari")
+async def test_ari_connection(request: AriTestRequest):
+    """Test connection to Asterisk ARI endpoint"""
+    import httpx
+    
+    try:
+        ari_url = f"{request.scheme}://{request.host}:{request.port}/ari/asterisk/info"
+        
+        verify = request.ssl_verify if request.scheme == "https" else True
+        
+        async with httpx.AsyncClient(timeout=10.0, verify=verify) as client:
+            response = await client.get(
+                ari_url,
+                auth=(request.username, request.password)
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "success": True,
+                    "message": "Successfully connected to Asterisk ARI",
+                    "asterisk_version": data.get("system", {}).get("version", "Unknown"),
+                    "build": data.get("build", {})
+                }
+            elif response.status_code == 401:
+                return {
+                    "success": False,
+                    "error": "Authentication failed - check username and password"
+                }
+            elif response.status_code == 403:
+                return {
+                    "success": False,
+                    "error": "Access forbidden - check ARI user permissions"
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Unexpected response: HTTP {response.status_code}"
+                }
+                
+    except httpx.ConnectError as e:
+        logger.debug("ARI connection error", exc_info=True)
+        error_str = str(e).lower()
+        if "ssl" in error_str or "certificate" in error_str:
+            return {
+                "success": False,
+                "error": "SSL certificate error - try disabling 'Verify SSL Certificate' for self-signed certs."
+            }
+        return {
+            "success": False,
+            "error": f"Connection refused - is Asterisk running at {request.host}:{request.port}?"
+        }
+    except httpx.ConnectTimeout:
+        return {
+            "success": False,
+            "error": f"Connection timeout - check if {request.host}:{request.port} is reachable"
+        }
+    except Exception as e:
+        logger.debug("ARI connection failed", exc_info=True)
+        error_str = str(e).lower()
+        if "ssl" in error_str or "certificate" in error_str or "verify" in error_str:
+            return {
+                "success": False,
+                "error": "SSL certificate verification failed - uncheck 'Verify SSL Certificate' for self-signed certs or hostname mismatches."
+            }
+        return {
+            "success": False,
+            "error": "Connection failed - check host/port/scheme and credentials."
+        }
+
+@router.get("/ari/extension-status", response_model=AriExtensionStatusResponse)
+async def ari_extension_status(key: str = "", device_state_tech: str = "auto", dial_string: str = ""):
+    """
+    Low-complexity helper for the Admin UI:
+    check the current ARI device state (preferred) or endpoint state (fallback)
+    for a configured internal extension.
+    """
+    import httpx
+    extension_key = (key or "").strip()
+    settings = _ari_env_settings()
+    if not settings.get("username") or not settings.get("password"):
+        return AriExtensionStatusResponse(success=False, source="error", status="unknown", error="Missing ARI credentials in environment (.env).")
+
+    device_state_id = _extract_device_state_id(dial_string, device_state_tech, extension_key)
+    endpoint_tech, endpoint_resource = _extract_endpoint(dial_string, device_state_tech, extension_key)
+
+    if not device_state_id and not (endpoint_tech and endpoint_resource):
+        return AriExtensionStatusResponse(
+            success=False,
+            source="error",
+            status="unknown",
+            error="Unable to derive device state id from dial string or tech/key.",
+        )
+
+    verify = settings["ssl_verify"] if settings["scheme"] == "https" else True
+    base = f"{settings['scheme']}://{settings['host']}:{settings['port']}/ari"
+
+    async with httpx.AsyncClient(timeout=8.0, verify=verify) as client:
+        if device_state_id:
+            try:
+                resp = await client.get(f"{base}/deviceStates", auth=(settings["username"], settings["password"]))
+                if resp.status_code == 200:
+                    data = resp.json() or []
+                    if isinstance(data, list):
+                        match = next(
+                            (
+                                item
+                                for item in data
+                                if str((item or {}).get("name") or "") == device_state_id
+                            ),
+                            None,
+                        )
+                        if isinstance(match, dict):
+                            state = str(match.get("state") or "")
+                            return AriExtensionStatusResponse(
+                                success=True,
+                                source="device_state",
+                                status=_classify_device_state(state),
+                                state=state,
+                                device_state_id=device_state_id,
+                                endpoint_tech=endpoint_tech,
+                                endpoint_resource=endpoint_resource,
+                            )
+            except Exception:
+                logger.debug("ARI device state query failed", exc_info=True)
+
+        if endpoint_tech and endpoint_resource:
+            try:
+                resp = await client.get(f"{base}/endpoints", auth=(settings["username"], settings["password"]))
+                if resp.status_code == 200:
+                    data = resp.json() or []
+                    if isinstance(data, list):
+                        match = next(
+                            (
+                                item
+                                for item in data
+                                if str((item or {}).get("technology") or "").upper() == endpoint_tech
+                                and str((item or {}).get("resource") or "") == endpoint_resource
+                            ),
+                            None,
+                        )
+                        if isinstance(match, dict):
+                            state = str(match.get("state") or "")
+                            status = "unknown"
+                            if state.strip().lower() in ("online", "reachable", "registered"):
+                                status = "available"
+                            return AriExtensionStatusResponse(
+                                success=True,
+                                source="endpoint",
+                                status=status,
+                                state=state,
+                                device_state_id=device_state_id,
+                                endpoint_tech=endpoint_tech,
+                                endpoint_resource=endpoint_resource,
+                            )
+            except Exception:
+                logger.debug("ARI endpoint query failed", exc_info=True)
+
+    return AriExtensionStatusResponse(
+        success=False,
+        source="error",
+        status="unknown",
+        device_state_id=device_state_id,
+        endpoint_tech=endpoint_tech,
+        endpoint_resource=endpoint_resource,
+        error="Unable to retrieve device state or endpoint state from ARI.",
+    )
+
+_UPDATER_IMAGE_REPO = "asterisk-ai-voice-agent-updater"
+_UPDATER_IMAGE_LOCK = None
+_UPDATES_STATUS_CACHE: dict = {"checked_at": 0.0, "data": None, "checked_remote": False}
+_UPDATES_STATUS_CACHE_TTL_SEC = 600
+_UPDATES_STATUS_CACHE_LOCK = None
+
+def _updater_remote_image_repo() -> str:
+    """
+    Return the remote registry/repo for the updater image.
+
+    Default matches our GHCR naming convention for other published images.
+    """
+    explicit = (os.getenv("AAVA_UPDATER_IMAGE_REMOTE") or "").strip()
+    if explicit:
+        return explicit
+    owner = (os.getenv("AAVA_GHCR_OWNER") or "hkjarral").strip().lower()
+    return f"ghcr.io/{owner}/{_UPDATER_IMAGE_REPO}"
+
+def _updater_lock():
+    global _UPDATER_IMAGE_LOCK
+    if _UPDATER_IMAGE_LOCK is None:
+        import threading
+        _UPDATER_IMAGE_LOCK = threading.Lock()
+    return _UPDATER_IMAGE_LOCK
+
+def _updates_status_cache_lock():
+    global _UPDATES_STATUS_CACHE_LOCK
+    if _UPDATES_STATUS_CACHE_LOCK is None:
+        import threading
+        _UPDATES_STATUS_CACHE_LOCK = threading.Lock()
+    return _UPDATES_STATUS_CACHE_LOCK
+
+_DOCKER_IMAGE_REF_RE = re.compile(
+    r"^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*:[0-9]+/)?"
+    r"[a-z0-9]+(?:[._-][a-z0-9]+)*"
+    r"(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*"
+    r"(?::[A-Za-z0-9][A-Za-z0-9._-]{0,127})?$"
+)
+
+def _validate_docker_image_ref(ref: str) -> str:
+    r = (ref or "").strip()
+    if not r or r.startswith("-") or any(c.isspace() for c in r) or "\x00" in r:
+        raise ValueError("invalid docker image ref")
+    if not _DOCKER_IMAGE_REF_RE.fullmatch(r):
+        raise ValueError("invalid docker image ref")
+    return r
+
+def _run_docker(args: list[str], *, cwd: Optional[str] = None, timeout_sec: int = 60) -> tuple[int, str]:
+    """
+    Run Docker CLI and return (exit_code, combined_output).
+    """
+    if not args or any((not isinstance(a, str) or a == "" or "\x00" in a or any(c.isspace() for c in a)) for a in args):
+        raise ValueError("invalid docker args")
+    try:
+        proc = subprocess.run(
+            ["docker", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+            env=os.environ.copy(),
+        )
+        out = (proc.stdout or "") + (proc.stderr or "")
+        return int(proc.returncode), out
+    except subprocess.TimeoutExpired as e:
+        out = (getattr(e, "stdout", "") or "") + (getattr(e, "stderr", "") or "")
+        return 124, out or "timeout"
+    except Exception as e:
+        return 1, str(e)
+
+def _is_semver_tag(ref: str) -> bool:
+    r = (ref or "").strip()
+    if not r:
+        return False
+    if r.startswith("v"):
+        r = r[1:]
+    return bool(re.match(r"^[0-9]+\.[0-9]+\.[0-9]+$", r))
+
+def _updater_pull_tags_for_ref(ref: str) -> list[str]:
+    """
+    Return candidate remote tags for pulling a prebuilt updater image.
+
+    Release workflows publish both vX.Y.Z and X.Y.Z tags; try both plus latest.
+    """
+    r = (ref or "").strip()
+    if not r:
+        return ["latest"]
+    if r in {"latest", "main"}:
+        return [r]
+
+    tags: list[str] = [r]
+    if _is_semver_tag(r):
+        if r.startswith("v"):
+            tags.append(r[1:])
+        else:
+            tags.append("v" + r)
+    tags.append("latest")
+    seen = set()
+    uniq: list[str] = []
+    for t in tags:
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        uniq.append(t)
+    return uniq
+
+def _project_host_root_from_admin_ui_container() -> str:
+    """
+    Resolve the host path that backs /app/project in the admin_ui container.
+
+    We need a host path because Docker binds are evaluated by the daemon on the host,
+    not from inside this container.
+    """
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    explicit_name = (os.getenv("AAVA_ADMIN_UI_CONTAINER_NAME") or "").strip()
+    candidates = [c for c in [explicit_name, "admin_ui", (os.getenv("HOSTNAME") or "").strip()] if c]
+
+    try:
+        client = docker.from_env()
+
+        c = None
+        last_err = None
+        for ident in candidates:
+            try:
+                c = client.containers.get(ident)
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if c is None:
+            raise last_err or RuntimeError("container lookup failed")
+
+        mounts = c.attrs.get("Mounts", []) or []
+        for m in mounts:
+            if m.get("Destination") == project_root and m.get("Type") == "bind":
+                src = (m.get("Source") or "").strip()
+                if src:
+                    return src
+        raise HTTPException(status_code=500, detail=f"Cannot resolve host mount backing {project_root}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to resolve project host root: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to resolve project host root")
+
+def _docker_sock_host_path_from_admin_ui_container() -> str:
+    """
+    Resolve the host path that backs /var/run/docker.sock in the admin_ui container.
+
+    Some deployments mount a non-standard Docker socket path (via DOCKER_SOCK in `.env`).
+    When starting updater containers, we must mount the *host* socket path.
+    """
+    explicit_name = (os.getenv("AAVA_ADMIN_UI_CONTAINER_NAME") or "").strip()
+    candidates = [c for c in [explicit_name, "admin_ui", (os.getenv("HOSTNAME") or "").strip()] if c]
+
+    try:
+        client = docker.from_env()
+
+        c = None
+        last_err = None
+        for ident in candidates:
+            try:
+                c = client.containers.get(ident)
+                break
+            except Exception as e:
+                last_err = e
+                continue
+        if c is None:
+            raise last_err or RuntimeError("container lookup failed")
+
+        mounts = c.attrs.get("Mounts", []) or []
+        for m in mounts:
+            if m.get("Destination") == "/var/run/docker.sock" and m.get("Type") == "bind":
+                src = (m.get("Source") or "").strip()
+                if src:
+                    return src
+    except Exception:
+        pass
+
+    return "/var/run/docker.sock"
+
+def _ensure_updater_image(host_project_root: str) -> None:
+    """
+    Ensure the updater image exists locally; build it on-demand from the project checkout.
+    """
+    raise RuntimeError("_ensure_updater_image requires a tag; use _ensure_updater_image_for_sha")
+
+def _current_project_head_sha() -> Optional[str]:
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    try:
+        import shutil
+        if shutil.which("git"):
+            proc = subprocess.run(
+                ["git", "-c", f"safe.directory={project_root}", "-C", project_root, "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=1.5,
+            )
+            if proc.returncode == 0:
+                sha = (proc.stdout or "").strip()
+                if sha:
+                    return sha
+
+        def _read_text(path: str) -> Optional[str]:
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception:
+                return None
+
+        def _resolve_gitdir(root: str) -> Optional[str]:
+            git_path = os.path.join(root, ".git")
+            if os.path.isdir(git_path):
+                return git_path
+            if os.path.isfile(git_path):
+                raw = _read_text(git_path) or ""
+                raw = raw.strip()
+                if raw.startswith("gitdir:"):
+                    gd = raw.split(":", 1)[1].strip()
+                    if not gd:
+                        return None
+                    if not os.path.isabs(gd):
+                        gd = os.path.normpath(os.path.join(root, gd))
+                    return gd
+            return None
+
+        def _read_packed_ref(gitdir: str, ref: str) -> Optional[str]:
+            import os
+            packed = _read_text(os.path.join(gitdir, "packed-refs"))
+            if not packed:
+                return None
+            for line in packed.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or line.startswith("^"):
+                    continue
+                parts = line.split()
+                if len(parts) != 2:
+                    continue
+                sha, name = parts
+                if name == ref:
+                    return sha
+            return None
+
+        gitdir = _resolve_gitdir(project_root)
+        if not gitdir:
+            return None
+
+        head = (_read_text(f"{gitdir}/HEAD") or "").strip()
+        if not head:
+            return None
+        if head.startswith("ref:"):
+            ref = head.split(":", 1)[1].strip()
+            if not ref:
+                return None
+            ref_path = os.path.join(gitdir, ref)
+            sha = (_read_text(ref_path) or "").strip()
+            if sha:
+                return sha
+            return _read_packed_ref(gitdir, ref)
+        return head
+    except Exception:
+        pass
+    return None
+
+def _updater_image_tag_for_sha(sha: Optional[str]) -> str:
+    if not sha:
+        return f"{_UPDATER_IMAGE_REPO}:latest"
+    return f"{_UPDATER_IMAGE_REPO}:sha-{sha[:12]}"
+
+def _ensure_updater_image_for_sha(host_project_root: str, tag: str) -> None:
+    lock = _updater_lock()
+    with lock:
+        try:
+            if not host_project_root:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Invalid project root for updater build: {host_project_root!r}",
+                )
+
+            client = docker.from_env()
+            try:
+                client.images.get(tag)
+                return
+            except Exception:
+                pass
+
+            build_root = os.getenv("PROJECT_ROOT", "/app/project")
+            logger.info(
+                "Building updater image: %s (context=%s, network=host)",
+                _sanitize_for_log(tag),
+                _sanitize_for_log(build_root),
+            )
+            safe_tag = _validate_docker_image_ref(tag)
+            code, out = _run_docker(
+                ["build", "--network=host", "-f", "updater/Dockerfile", "-t", safe_tag, "."],
+                cwd=build_root,
+                timeout_sec=1800,
+            )
+            if code != 0:
+                tail = "\n".join((out or "").splitlines()[-40:]).strip()
+                dns_keywords = ["could not resolve", "temporary failure in name resolution",
+                                "no such host", "dns", "getaddrinfo", "resolve host"]
+                is_dns_issue = any(k in (out or "").lower() for k in dns_keywords)
+                if is_dns_issue:
+                    hint = (
+                        "DNS resolution failed during Docker image build.\n\n"
+                        "Fix: Add DNS servers to Docker daemon config and restart:\n"
+                        '  echo \'{"dns": ["8.8.8.8", "8.8.4.4"]}\' | sudo tee /etc/docker/daemon.json\n'
+                        "  sudo systemctl restart docker\n\n"
+                        "Then retry the update from the Admin UI."
+                    )
+                else:
+                    hint = (
+                        "If this fails due to DNS/egress restrictions, try:\n"
+                        '  echo \'{"dns": ["8.8.8.8", "8.8.4.4"]}\' | sudo tee /etc/docker/daemon.json\n'
+                        "  sudo systemctl restart docker\n\n"
+                        "Or update via CLI:\n"
+                        "  agent update"
+                    )
+                if tail:
+                    logger.error("Updater build failed (tail):\n%s", tail)
+                    raise HTTPException(status_code=500, detail=f"Failed to build updater image:\n{tail}\n\n{hint}")
+                raise HTTPException(status_code=500, detail=f"Failed to build updater image.\n\n{hint}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception("Failed to build updater image")
+            raise HTTPException(status_code=500, detail="Failed to build updater image") from e
+
+def _ensure_updater_image_for_ref(host_project_root: str, local_tag: str, *, prefer_pull_ref: Optional[str], allow_build: bool) -> None:
+    """
+    Ensure the updater image exists locally under `local_tag`.
+
+    For stable release tag updates, prefer pulling a published updater image from GHCR,
+    and retag it to the local tag used by updater jobs.
+    """
+    client = docker.from_env()
+    try:
+        client.images.get(local_tag)
+        return
+    except Exception:
+        pass
+
+    if prefer_pull_ref:
+        remote_repo = _updater_remote_image_repo()
+        for t in _updater_pull_tags_for_ref(prefer_pull_ref):
+            remote_ref = _validate_docker_image_ref(f"{remote_repo}:{t}")
+            code, out = _run_docker(["pull", remote_ref], timeout_sec=900)
+            if code == 0:
+                _run_docker(["tag", remote_ref, _validate_docker_image_ref(local_tag)], timeout_sec=60)
+                logger.info("Pulled updater image: %s -> %s", _sanitize_for_log(remote_ref), _sanitize_for_log(local_tag))
+                return
+            logger.warning(
+                "Failed to pull updater image %s: %s",
+                _sanitize_for_log(remote_ref),
+                _sanitize_for_log((out or "").strip().splitlines()[-1:][0] if (out or "").strip().splitlines() else ""),
+            )
+
+    if not allow_build:
+        raise HTTPException(status_code=500, detail="Updater image missing and local build is disabled")
+
+    _ensure_updater_image_for_sha(host_project_root, local_tag)
+
+def _run_updater_ephemeral(
+    host_project_root: str,
+    *,
+    env: dict,
+    command: Optional[str] = None,
+    timeout_sec: int = 30,
+    capture_stderr: bool = True,
+    prefer_pull_ref: Optional[str] = None,
+    allow_build: bool = True,
+) -> tuple[int, str]:
+    """
+    Run the updater image as a short-lived container and return (exit_code, stdout/stderr).
+
+    If command is provided, we override the default entrypoint with bash -lc <command>.
+    """
+    import uuid
+
+    sha = _current_project_head_sha()
+    tag = _updater_image_tag_for_sha(sha)
+    _ensure_updater_image_for_ref(host_project_root, tag, prefer_pull_ref=prefer_pull_ref, allow_build=allow_build)
+
+    client = docker.from_env()
+    name = f"aava-update-ephemeral-{uuid.uuid4().hex[:10]}"
+
+    host_docker_sock = _docker_sock_host_path_from_admin_ui_container()
+    volumes = {
+        host_project_root: {"bind": host_project_root, "mode": "rw"},
+        host_docker_sock: {"bind": "/var/run/docker.sock", "mode": "rw"},
+    }
+
+    dns_fallback = ["8.8.8.8", "8.8.4.4"]
+
+    try:
+        if command:
+            container = client.containers.run(
+                tag,
+                command=[command],
+                entrypoint=["bash", "-lc"],
+                environment=env,
+                volumes=volumes,
+                name=name,
+                dns=dns_fallback,
+                detach=True,
+            )
+        else:
+            container = client.containers.run(
+                tag,
+                environment=env,
+                volumes=volumes,
+                name=name,
+                dns=dns_fallback,
+                detach=True,
+            )
+
+        result = container.wait(timeout=timeout_sec)
+        status = int((result or {}).get("StatusCode", 1))
+        logs = (container.logs(stdout=True, stderr=capture_stderr) or b"").decode("utf-8", errors="replace")
+        return status, logs
+    finally:
+        try:
+            c = client.containers.get(name)
+            c.remove(force=True)
+        except Exception:
+            pass
+
+def _parse_semver_tag(tag: str) -> Optional[tuple[int, int, int]]:
+    tag = (tag or "").strip()
+    if not tag.startswith("v"):
+        return None
+    parts = tag[1:].split(".")
+    if len(parts) < 3:
+        return None
+    try:
+        return int(parts[0]), int(parts[1]), int(parts[2])
+    except Exception:
+        return None
+
+def _select_latest_v_tag(ls_remote_text: str) -> Optional[dict]:
+    """
+    Parse `git ls-remote --tags origin 'refs/tags/v*'` output and return:
+      { "tag": "vX.Y.Z", "sha": "<commit-sha>" }
+
+    Handles annotated tags by preferring peeled `^{}` lines.
+    """
+    refs: dict[str, dict] = {}
+    for line in (ls_remote_text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            sha, ref = line.split("\t", 1)
+        except Exception:
+            continue
+        if not ref.startswith("refs/tags/"):
+            continue
+        name = ref[len("refs/tags/"):]
+        peeled = False
+        if name.endswith("^{}"):
+            name = name[:-3]
+            peeled = True
+        if not name.startswith("v"):
+            continue
+        ent = refs.get(name) or {"sha": None, "peeled_sha": None}
+        if peeled:
+            ent["peeled_sha"] = sha
+        else:
+            ent["sha"] = sha
+        refs[name] = ent
+
+    best = None
+    best_ver = None
+    for tag, ent in refs.items():
+        ver = _parse_semver_tag(tag)
+        if not ver:
+            continue
+        if best_ver is None or ver > best_ver:
+            best_ver = ver
+            best = {"tag": tag, "sha": ent.get("peeled_sha") or ent.get("sha")}
+    if best and best.get("sha"):
+        return best
+    return None
+
+class UpdateStatusResponse(BaseModel):
+    local: dict
+    remote: Optional[dict] = None
+    update_available: Optional[bool] = None
+    changelog_latest: Optional[str] = None
+    error: Optional[str] = None
+
+def _extract_changelog_section(changelog_md: str, version: str) -> Optional[str]:
+    """
+    Extract the Keep-a-Changelog section for a given version (e.g., "5.2.4").
+    Returns markdown (including the header) or None if not found.
+    """
+    if not changelog_md:
+        return None
+    v = (version or "").strip()
+    if v.startswith("v"):
+        v = v[1:]
+    if not v:
+        return None
+
+    lines = changelog_md.splitlines()
+    start_idx = None
+    pat = f"## [{v}]"
+    for i, line in enumerate(lines):
+        if line.strip().startswith(pat):
+            start_idx = i
+            break
+    if start_idx is None:
+        return None
+    end_idx = None
+    for j in range(start_idx + 1, len(lines)):
+        if lines[j].startswith("## ["):
+            end_idx = j
+            break
+    block = "\n".join(lines[start_idx:end_idx]).strip()
+    return block or None
+
+@router.get("/updates/status", response_model=UpdateStatusResponse)
+async def updates_status(check_remote: bool = False, build_updater: bool = False, force: bool = False):
+    """
+    Return update status for the Updates UI.
+
+    IMPORTANT:
+    - By default, this endpoint does NOT build the updater image and does NOT contact the remote.
+    - The Updates page opts in by setting `check_remote=true` (and optionally `build_updater=true`).
+    """
+    if not build_updater and not check_remote:
+        project_root = os.getenv("PROJECT_ROOT", "/app/project")
+
+        def _read_text(p: str) -> Optional[str]:
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception:
+                return None
+
+        def _current_branch(root: str) -> Optional[str]:
+            gitpath = os.path.join(root, ".git")
+            gitdir = gitpath
+            if os.path.isfile(gitpath):
+                raw = (_read_text(gitpath) or "").strip()
+                if raw.startswith("gitdir:"):
+                    gd = raw.split(":", 1)[1].strip()
+                    if not gd:
+                        return None
+                    if not os.path.isabs(gd):
+                        gd = os.path.normpath(os.path.join(root, gd))
+                    gitdir = gd
+                else:
+                    return None
+
+            head = (_read_text(os.path.join(gitdir, "HEAD")) or "").strip()
+            if not head:
+                return None
+            if head.startswith("ref:"):
+                ref = head.split(":", 1)[1].strip()
+                if ref.startswith("refs/heads/"):
+                    return ref[len("refs/heads/") :]
+                return ref
+            return "detached"
+
+        branch = _current_branch(project_root) or "unknown"
+        head_sha = _current_project_head_sha() or "unknown"
+        describe = head_sha[:12] if isinstance(head_sha, str) and head_sha not in ("", "unknown") else "unknown"
+        return UpdateStatusResponse(
+            local={"branch": branch, "head_sha": head_sha, "describe": describe},
+            remote=None,
+            update_available=None,
+            changelog_latest=None,
+            error="Not checked",
+        )
+
+    try:
+        import time
+
+        now = time.time()
+        with _updates_status_cache_lock():
+            cached = _UPDATES_STATUS_CACHE.get("data")
+            checked_at = float(_UPDATES_STATUS_CACHE.get("checked_at") or 0.0)
+            cached_remote = bool(_UPDATES_STATUS_CACHE.get("checked_remote"))
+        if not force and cached and (now - checked_at) < _UPDATES_STATUS_CACHE_TTL_SEC:
+            if not check_remote or cached_remote:
+                return UpdateStatusResponse(**cached)
+    except Exception:
+        logger.debug("Failed to read updates status cache", exc_info=True)
+
+    host_root = _project_host_root_from_admin_ui_container()
+
+    try:
+        code, out = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=(
+                "set -euo pipefail; "
+                "cd \"$PROJECT_ROOT\"; "
+                "git -c safe.directory=\"$PROJECT_ROOT\" rev-parse --abbrev-ref HEAD; "
+                "git -c safe.directory=\"$PROJECT_ROOT\" rev-parse HEAD; "
+                "git -c safe.directory=\"$PROJECT_ROOT\" describe --tags --always --dirty; "
+                "git -c safe.directory=\"$PROJECT_ROOT\" describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true"
+            ),
+            timeout_sec=30,
+            prefer_pull_ref="latest",
+            allow_build=bool(build_updater),
+        )
+    except HTTPException as e:
+        return UpdateStatusResponse(
+            local={"branch": "unknown", "head_sha": "unknown", "describe": "unknown"},
+            remote=None,
+            update_available=None,
+            changelog_latest=None,
+            error=(str(getattr(e, "detail", None) or "Local status unavailable"))[:400],
+        )
+    except Exception:
+        return UpdateStatusResponse(
+            local={"branch": "unknown", "head_sha": "unknown", "describe": "unknown"},
+            remote=None,
+            update_available=None,
+            changelog_latest=None,
+            error="Local status unavailable",
+        )
+
+    if code != 0:
+        return UpdateStatusResponse(
+            local={"branch": "unknown", "head_sha": "unknown", "describe": "unknown"},
+            remote=None,
+            update_available=None,
+            changelog_latest=None,
+            error="Local status unavailable (updater image not ready)",
+        )
+
+    lines = [l.strip() for l in (out or "").splitlines() if l.strip()]
+    if len(lines) < 3:
+        return UpdateStatusResponse(
+            local={"branch": "unknown", "head_sha": "unknown", "describe": "unknown"},
+            remote=None,
+            update_available=None,
+            changelog_latest=None,
+            error="Local status unavailable (unexpected git output)",
+        )
+
+    branch = lines[0]
+    head_sha = lines[1]
+    describe = lines[2]
+    deployed_tag = lines[3] if len(lines) >= 4 and lines[3] else None
+    if branch == "HEAD":
+        branch = "detached"
+
+    if not check_remote:
+        payload = {
+            "local": {"branch": branch, "head_sha": head_sha, "describe": describe, "deployed_tag": deployed_tag},
+            "remote": None,
+            "update_available": None,
+            "changelog_latest": None,
+            "error": None,
+        }
+        try:
+            import time
+
+            with _updates_status_cache_lock():
+                _UPDATES_STATUS_CACHE["checked_at"] = time.time()
+                _UPDATES_STATUS_CACHE["data"] = payload
+                _UPDATES_STATUS_CACHE["checked_remote"] = False
+        except Exception:
+            logger.debug("Failed to write updates status cache", exc_info=True)
+        return UpdateStatusResponse(**payload)
+
+    try:
+        code2, out2 = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=(
+                "set -euo pipefail; "
+                "cd \"$PROJECT_ROOT\"; "
+                "git -c safe.directory=\"$PROJECT_ROOT\" ls-remote --tags origin 'refs/tags/v*'"
+            ),
+            timeout_sec=15,
+            prefer_pull_ref="latest",
+            allow_build=bool(build_updater),
+        )
+    except HTTPException:
+        code2, out2 = 1, ""
+    if code2 != 0:
+        payload = {
+            "local": {"branch": branch, "head_sha": head_sha, "describe": describe, "deployed_tag": deployed_tag},
+            "remote": None,
+            "update_available": None,
+            "changelog_latest": None,
+            "error": "Remote unavailable (offline or blocked)",
+        }
+        try:
+            import time
+
+            with _updates_status_cache_lock():
+                _UPDATES_STATUS_CACHE["checked_at"] = time.time()
+                _UPDATES_STATUS_CACHE["data"] = payload
+                _UPDATES_STATUS_CACHE["checked_remote"] = True
+        except Exception:
+            logger.debug("Failed to write updates status cache", exc_info=True)
+        return UpdateStatusResponse(**payload)
+
+    latest = _select_latest_v_tag(out2 or "")
+    if not latest:
+        payload = {
+            "local": {"branch": branch, "head_sha": head_sha, "describe": describe, "deployed_tag": deployed_tag},
+            "remote": None,
+            "update_available": None,
+            "changelog_latest": None,
+            "error": "No v* tags found on remote",
+        }
+        try:
+            import time
+
+            with _updates_status_cache_lock():
+                _UPDATES_STATUS_CACHE["checked_at"] = time.time()
+                _UPDATES_STATUS_CACHE["data"] = payload
+                _UPDATES_STATUS_CACHE["checked_remote"] = True
+        except Exception:
+            logger.debug("Failed to write updates status cache", exc_info=True)
+        return UpdateStatusResponse(**payload)
+
+    tag = latest["tag"]
+    tag_sha = latest["sha"]
+
+    rel_cmd = (
+        "cd \"$PROJECT_ROOT\"; "
+        f"git -c safe.directory=\"$PROJECT_ROOT\" fetch -q origin refs/tags/{tag}:refs/tags/{tag} >/dev/null 2>&1 || true; "
+        f"head='{head_sha.strip()}'; target='{tag_sha.strip()}'; "
+        "git -c safe.directory=\"$PROJECT_ROOT\" cat-file -e \"$target^{commit}\" >/dev/null 2>&1 || { echo unknown; exit 0; }; "
+        "if [ \"$head\" = \"$target\" ]; then echo equal; exit 0; fi; "
+        "git -c safe.directory=\"$PROJECT_ROOT\" merge-base --is-ancestor \"$head\" \"$target\" >/dev/null 2>&1 && { echo behind; exit 0; }; "
+        "git -c safe.directory=\"$PROJECT_ROOT\" merge-base --is-ancestor \"$target\" \"$head\" >/dev/null 2>&1 && { echo ahead; exit 0; }; "
+        "echo diverged; exit 0"
+    )
+
+    try:
+        code3, out3 = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=rel_cmd,
+            timeout_sec=20,
+            prefer_pull_ref="latest",
+            allow_build=bool(build_updater),
+        )
+    except HTTPException:
+        code3, out3 = 1, ""
+    relation = (out3 or "").strip().splitlines()[-1].strip() if code3 == 0 and (out3 or "").strip() else "unknown"
+
+    if relation == "equal":
+        update_available = False
+        error = None
+    elif relation == "behind":
+        update_available = True
+        error = None
+    elif relation == "ahead":
+        update_available = False
+        error = None
+    elif relation == "diverged":
+        update_available = None
+        error = "Local branch diverged from latest release (run plan for details)"
+    else:
+        update_available = None
+        error = "Unable to compare local version to remote (offline or missing objects)"
+
+    changelog_latest = None
+    try:
+        code4, out4 = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=(
+                "set -euo pipefail; "
+                "cd \"$PROJECT_ROOT\"; "
+                f"git -c safe.directory=\"$PROJECT_ROOT\" fetch -q origin refs/tags/{tag}:refs/tags/{tag} >/dev/null 2>&1 || true; "
+                f"git -c safe.directory=\"$PROJECT_ROOT\" show {tag}:CHANGELOG.md 2>/dev/null || true"
+            ),
+            timeout_sec=20,
+            prefer_pull_ref="latest",
+            allow_build=bool(build_updater),
+        )
+        if code4 == 0 and (out4 or "").strip():
+            changelog_latest = _extract_changelog_section(out4, tag)
+    except Exception:
+        changelog_latest = None
+
+    payload = {
+        "local": {"branch": branch, "head_sha": head_sha, "describe": describe, "deployed_tag": deployed_tag},
+        "remote": {"latest_tag": tag, "latest_tag_sha": tag_sha},
+        "update_available": update_available,
+        "changelog_latest": changelog_latest,
+        "error": error,
+    }
+    try:
+        import time
+
+        with _updates_status_cache_lock():
+            _UPDATES_STATUS_CACHE["checked_at"] = time.time()
+            _UPDATES_STATUS_CACHE["data"] = payload
+            _UPDATES_STATUS_CACHE["checked_remote"] = True
+    except Exception:
+        logger.debug("Failed to write updates status cache", exc_info=True)
+    return UpdateStatusResponse(**payload)
+
+class UpdatePlanResponse(BaseModel):
+    plan: dict
+
+class UpdateBranchesResponse(BaseModel):
+    branches: list[str]
+    error: Optional[str] = None
+
+@router.get("/updates/branches", response_model=UpdateBranchesResponse)
+async def updates_branches(build_updater: bool = False):
+    """
+    Return the list of remote branches on origin for the Updates UI dropdown.
+    """
+    host_root = _project_host_root_from_admin_ui_container()
+
+    try:
+        code, out = _run_updater_ephemeral(
+            host_root,
+            env={"PROJECT_ROOT": host_root},
+            command=(
+                "set -euo pipefail; "
+                "cd \"$PROJECT_ROOT\"; "
+                "git -c safe.directory=\"$PROJECT_ROOT\" ls-remote --heads origin"
+            ),
+            timeout_sec=20,
+            prefer_pull_ref="latest",
+            allow_build=bool(build_updater),
+        )
+    except HTTPException:
+        code, out = 1, ""
+    if code != 0:
+        return UpdateBranchesResponse(branches=[], error="Remote branches unavailable (offline or blocked)")
+
+    branches: list[str] = []
+    for line in (out or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            _sha, ref = line.split("\t", 1)
+        except Exception:
+            continue
+        if not ref.startswith("refs/heads/"):
+            continue
+        name = ref[len("refs/heads/") :].strip()
+        if not name:
+            continue
+        branches.append(name)
+
+    branches = sorted(set(branches))
+    return UpdateBranchesResponse(branches=branches, error=None)
+
+@router.get("/updates/plan", response_model=UpdatePlanResponse)
+async def updates_plan(ref: str = "main", include_ui: bool = False, checkout: bool = True):
+    """
+    Return a pre-update plan from `agent update --plan --plan-json`.
+    """
+    host_root = _project_host_root_from_admin_ui_container()
+
+    ref = _validate_git_ref(ref)
+    env = {
+        "PROJECT_ROOT": host_root,
+        "AAVA_UPDATE_MODE": "plan",
+        "AAVA_UPDATE_INCLUDE_UI": "true" if include_ui else "false",
+        "AAVA_UPDATE_REMOTE": "origin",
+        "AAVA_UPDATE_REF": ref,
+        "AAVA_UPDATE_CHECKOUT": "true" if checkout else "false",
+    }
+    code, out = _run_updater_ephemeral(
+        host_root,
+        env=env,
+        timeout_sec=120,
+        capture_stderr=False,
+        prefer_pull_ref="latest",
+        allow_build=True,
+    )
+    if code != 0:
+        raise HTTPException(status_code=500, detail=f"Failed to compute update plan: {out.strip()[:400]}")
+
+    import json
+    try:
+        plan = json.loads(out)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Updater returned invalid JSON")
+    return UpdatePlanResponse(plan=plan)
+
+class UpdateRunRequest(BaseModel):
+    include_ui: bool = False
+    ref: str = "main"
+    checkout: bool = True
+    update_cli_host: bool = True
+    cli_install_path: Optional[str] = None
+
+class UpdateRunResponse(BaseModel):
+    job_id: str
+
+@router.post("/updates/run", response_model=UpdateRunResponse)
+async def updates_run(body: UpdateRunRequest):
+    host_root = _project_host_root_from_admin_ui_container()
+    host_docker_sock = _docker_sock_host_path_from_admin_ui_container()
+    sha = _current_project_head_sha()
+    tag = _updater_image_tag_for_sha(sha)
+    ref = _validate_git_ref(body.ref or "main")
+    prefer_pull = ref if _is_semver_tag(ref) else "latest"
+    _ensure_updater_image_for_ref(host_root, tag, prefer_pull_ref=prefer_pull, allow_build=True)
+
+    job_id = uuid.uuid4().hex
+
+    try:
+        project_root = os.getenv("PROJECT_ROOT", "/app/project")
+        jobs_dir = os.path.join(project_root, ".agent", "updates", "jobs")
+        os.makedirs(jobs_dir, exist_ok=True)
+        state_path = os.path.join(jobs_dir, f"{job_id}.json")
+        log_path = os.path.join(jobs_dir, f"{job_id}.log")
+        import json
+        from datetime import datetime, timezone
+
+        payload = {
+            "job_id": job_id,
+            "status": "starting",
+            "started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "finished_at": None,
+            "include_ui": bool(body.include_ui),
+            "exit_code": None,
+            "log_path": log_path,
+            "ref": (body.ref or "main").strip(),
+            "checkout": bool(body.checkout),
+            "update_cli_host": bool(body.update_cli_host),
+            "cli_install_path": (body.cli_install_path or "").strip() or None,
+        }
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+    except Exception:
+        pass
+
+    client = docker.from_env()
+    name = f"aava-update-{job_id[:12]}"
+
+    volumes = {
+        host_root: {"bind": host_root, "mode": "rw"},
+        host_docker_sock: {"bind": "/var/run/docker.sock", "mode": "rw"},
+    }
+    env = {
+        "PROJECT_ROOT": host_root,
+        "AAVA_UPDATE_MODE": "run",
+        "AAVA_UPDATE_JOB_ID": job_id,
+        "AAVA_UPDATE_INCLUDE_UI": "true" if body.include_ui else "false",
+        "AAVA_UPDATE_REMOTE": "origin",
+        "AAVA_UPDATE_REF": ref,
+        "AAVA_UPDATE_CHECKOUT": "true" if body.checkout else "false",
+        "AAVA_UPDATE_UPDATE_CLI_HOST": "true" if body.update_cli_host else "false",
+    }
+    cli_path = (body.cli_install_path or "").strip()
+    if cli_path:
+        env["AAVA_UPDATE_CLI_INSTALL_PATH"] = cli_path
+
+    try:
+        client.containers.run(
+            tag,
+            environment=env,
+            volumes=volumes,
+            name=name,
+            detach=True,
+            auto_remove=True,
+        )
+    except Exception as e:
+        logger.exception("Failed to start update runner: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to start update runner")
+
+    return UpdateRunResponse(job_id=job_id)
+
+class UpdateRollbackRequest(BaseModel):
+    from_job_id: str
+
+class UpdateRollbackResponse(BaseModel):
+    job_id: str
+
+@router.post("/updates/rollback", response_model=UpdateRollbackResponse)
+async def updates_rollback(body: UpdateRollbackRequest):
+    """
+    Roll back to the pre-update branch + restore config from the backup captured by a prior update job.
+
+    This starts a detached updater container with `AAVA_UPDATE_MODE=rollback`.
+    """
+    host_root = _project_host_root_from_admin_ui_container()
+    host_docker_sock = _docker_sock_host_path_from_admin_ui_container()
+    sha = _current_project_head_sha()
+    tag = _updater_image_tag_for_sha(sha)
+    _ensure_updater_image_for_ref(host_root, tag, prefer_pull_ref="latest", allow_build=True)
+
+    from_job_id_raw = (body.from_job_id or "").strip()
+    if not from_job_id_raw:
+        raise HTTPException(status_code=400, detail="from_job_id is required")
+    try:
+        from_job_id = uuid.UUID(from_job_id_raw).hex
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid from_job_id format")
+
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    jobs_dir = os.path.join(project_root, ".agent", "updates", "jobs")
+    src_state_path = os.path.join(jobs_dir, f"{from_job_id}.json")
+    if not os.path.exists(src_state_path):
+        raise HTTPException(status_code=404, detail="Source update job not found")
+
+    import json
+    from datetime import datetime, timezone
+
+    src_job = {}
+    try:
+        with open(src_state_path, "r", encoding="utf-8") as f:
+            src_job = json.load(f) or {}
+    except Exception:
+        src_job = {}
+
+    include_ui = bool(src_job.get("include_ui"))
+    pre_update_branch = (src_job.get("pre_update_branch") or "").strip() or None
+    backup_dir_rel = (src_job.get("backup_dir_rel") or "").strip() or None
+    update_cli_host = bool(src_job.get("update_cli_host", True))
+    cli_install_path = (src_job.get("cli_install_path") or "").strip() or None
+
+    import uuid
+    job_id = uuid.uuid4().hex
+
+    try:
+        os.makedirs(jobs_dir, exist_ok=True)
+        state_path = os.path.join(jobs_dir, f"{job_id}.json")
+        log_path = os.path.join(jobs_dir, f"{job_id}.log")
+        payload = {
+            "job_id": job_id,
+            "type": "rollback",
+            "rollback_from_job_id": from_job_id,
+            "status": "starting",
+            "started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "finished_at": None,
+            "include_ui": include_ui,
+            "update_cli_host": update_cli_host,
+            "cli_install_path": cli_install_path,
+            "exit_code": None,
+            "log_path": log_path,
+        }
+        if pre_update_branch:
+            payload["ref"] = pre_update_branch
+            payload["pre_update_branch"] = pre_update_branch
+        if backup_dir_rel:
+            payload["backup_dir_rel"] = backup_dir_rel
+
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+    except Exception:
+        pass
+
+    client = docker.from_env()
+    name = f"aava-rollback-{job_id[:12]}"
+
+    volumes = {
+        host_root: {"bind": host_root, "mode": "rw"},
+        host_docker_sock: {"bind": "/var/run/docker.sock", "mode": "rw"},
+    }
+    env = {
+        "PROJECT_ROOT": host_root,
+        "AAVA_UPDATE_MODE": "rollback",
+        "AAVA_UPDATE_JOB_ID": job_id,
+        "AAVA_UPDATE_ROLLBACK_FROM_JOB": from_job_id,
+        "AAVA_UPDATE_INCLUDE_UI": "true" if include_ui else "false",
+        "AAVA_UPDATE_UPDATE_CLI_HOST": "true" if update_cli_host else "false",
+    }
+    if cli_install_path:
+        env["AAVA_UPDATE_CLI_INSTALL_PATH"] = cli_install_path
+
+    try:
+        client.containers.run(
+            tag,
+            environment=env,
+            volumes=volumes,
+            name=name,
+            detach=True,
+            auto_remove=True,
+        )
+    except Exception as e:
+        logger.exception("Failed to start rollback runner: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to start rollback runner")
+
+    return UpdateRollbackResponse(job_id=job_id)
+
+class UpdateJobResponse(BaseModel):
+    job: dict
+    log_tail: Optional[str] = None
+
+def _tail_text_file(path: str, max_lines: int = 250, max_bytes: int = 512 * 1024) -> str:
+    """
+    Return the last `max_lines` lines of a text file without reading the entire file into memory.
+    """
+    if max_lines < 1:
+        max_lines = 1
+    if max_bytes < 4 * 1024:
+        max_bytes = 4 * 1024
+
+    try:
+        file_size = os.path.getsize(path)
+        if file_size <= 0:
+            return ""
+
+        with open(path, "rb") as f:
+            chunk_size = 32 * 1024
+            pos = file_size
+            remaining = min(file_size, max_bytes)
+            data = b""
+
+            while remaining > 0:
+                read_size = min(chunk_size, remaining)
+                pos -= read_size
+                f.seek(pos)
+                chunk = f.read(read_size)
+                data = chunk + data
+                if data.count(b"\n") >= max_lines + 1:
+                    break
+                remaining -= read_size
+
+        text = data.decode("utf-8", errors="replace")
+        lines = text.splitlines()
+        return "\n".join(lines[-max_lines:])
+    except Exception:
+        return ""
+
+class UpdateHistoryItem(BaseModel):
+    job: dict
+
+class UpdateHistoryResponse(BaseModel):
+    jobs: list[dict]
+
+@router.get("/updates/history", response_model=UpdateHistoryResponse)
+async def updates_history(limit: int = 10):
+    """
+    Return the most recent update jobs (summary).
+
+    Data source: `.agent/updates/jobs/*.json` persisted on the project volume.
+    """
+    if limit < 1:
+        limit = 1
+    if limit > 25:
+        limit = 25
+
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    jobs_dir = os.path.join(project_root, ".agent", "updates", "jobs")
+    if not os.path.isdir(jobs_dir):
+        return UpdateHistoryResponse(jobs=[])
+
+    import glob
+    import json
+    from datetime import datetime
+
+    def _parse_dt(s: Optional[str]) -> Optional[datetime]:
+        if not s:
+            return None
+        try:
+            return datetime.fromisoformat(s.replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    items: list[tuple[float, dict]] = []
+    for path in glob.glob(os.path.join(jobs_dir, "*.json")):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                job = json.load(f) or {}
+        except Exception:
+            continue
+
+        st = _parse_dt(job.get("finished_at")) or _parse_dt(job.get("started_at"))
+        ts = st.timestamp() if st else os.path.getmtime(path)
+        items.append((ts, job))
+
+    items.sort(key=lambda x: x[0], reverse=True)
+    return UpdateHistoryResponse(jobs=[j for _, j in items[:limit]])
+
+@router.get("/updates/jobs/{job_id}", response_model=UpdateJobResponse)
+async def updates_job(job_id: str):
+    job_id_raw = (job_id or "").strip()
+    if not job_id_raw:
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
+    try:
+        job_id = uuid.UUID(job_id_raw).hex
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    jobs_dir = os.path.join(project_root, ".agent", "updates", "jobs")
+    state_path = os.path.join(jobs_dir, f"{job_id}.json")
+    log_path = os.path.join(jobs_dir, f"{job_id}.log")
+
+    import json
+
+    if not os.path.exists(state_path) and not os.path.exists(log_path):
+        raise HTTPException(status_code=404, detail="Update job not found")
+
+    job = {}
+    if os.path.exists(state_path):
+        try:
+            with open(state_path, "r", encoding="utf-8") as f:
+                job = json.load(f) or {}
+        except Exception:
+            job = {"job_id": job_id, "status": "unknown"}
+    else:
+        job = {"job_id": job_id, "status": "running"}
+
+    tail = None
+    if os.path.exists(log_path):
+        tail = _tail_text_file(log_path, max_lines=250)
+
+    return UpdateJobResponse(job=job, log_tail=tail)
+
+_REQUIRED_MODULES = [
+    "app_audiosocket",
+    "res_ari",
+    "res_stasis",
+    "chan_pjsip",
+    "res_http_websocket",
+]
+
+def _resolve_app_name() -> str:
+    """Resolve the ARI app name from YAML config, env, or default."""
+    try:
+        project_root = os.getenv("PROJECT_ROOT", "/app/project")
+        base_path = os.path.join(project_root, "config", "ai-agent.yaml")
+        local_path = os.path.join(project_root, "config", "ai-agent.local.yaml")
+
+        merged_cfg: dict = {}
+        if os.path.exists(base_path):
+            with open(base_path, "r") as f:
+                base_cfg = yaml.safe_load(f) or {}
+            if isinstance(base_cfg, dict):
+                merged_cfg = dict(base_cfg)
+
+        if os.path.exists(local_path):
+            with open(local_path, "r") as f:
+                local_cfg = yaml.safe_load(f) or {}
+            if isinstance(local_cfg, dict):
+                merged_cfg = _deep_merge_dict(merged_cfg, local_cfg)
+
+        ast_cfg = merged_cfg.get("asterisk") or {}
+        if isinstance(ast_cfg, dict) and ast_cfg.get("app_name"):
+            return str(ast_cfg["app_name"]).strip()
+    except Exception:
+        pass
+    return (
+        _dotenv_value("ASTERISK_APP_NAME")
+        or _dotenv_value("ASTERISK_ARI_APP")
+        or os.environ.get("ASTERISK_APP_NAME")
+        or os.environ.get("ASTERISK_ARI_APP")
+        or "asterisk-ai-voice-agent"
+    )
+
+@router.get("/asterisk-status")
+async def asterisk_status():
+    """
+    Combined Asterisk config status for the Admin UI Asterisk Setup page.
+
+    Returns:
+      - mode: "local" or "remote" based on ASTERISK_HOST
+      - manifest: contents of data/asterisk_status.json (from preflight.sh) or null
+      - live: real-time ARI checks (info, modules, app registration)
+    """
+    import httpx
+    import json as _json
+
+    settings = _ari_env_settings()
+    host = settings["host"]
+
+    mode = "local" if host in ("127.0.0.1", "localhost", "", "::1") else "remote"
+
+    manifest = None
+    project_root = os.getenv("PROJECT_ROOT", "/app/project")
+    manifest_path = os.path.join(project_root, "data", "asterisk_status.json")
+    try:
+        if os.path.exists(manifest_path):
+            with open(manifest_path, "r") as f:
+                manifest = _json.load(f)
+    except Exception as e:
+        logger.debug("Could not read asterisk manifest: %s", e)
+
+    live = {
+        "ari_reachable": False,
+        "asterisk_version": None,
+        "ari_version": None,
+        "uptime": None,
+        "last_reload": None,
+        "app_registered": False,
+        "app_name": _resolve_app_name(),
+        "modules": {},
+        "active_channels": 0,
+        "source": "direct",
+    }
+
+    ai_health = await _fetch_ai_engine_health()
+    if isinstance(ai_health, dict):
+        live["ai_engine_reachable"] = True
+        live["ai_engine_status"] = ai_health.get("status")
+        live["active_channels"] = int(ai_health.get("asterisk_channels") or ai_health.get("active_calls") or 0)
+        if ai_health.get("ari_connected") is True:
+            live["ari_reachable"] = True
+            live["ari_version"] = "Connected via AI Engine"
+            live["app_registered"] = True
+            live["source"] = "ai_engine_health"
+    else:
+        live["ai_engine_reachable"] = False
+
+    if not settings.get("username") or not settings.get("password"):
+        return {"mode": mode, "manifest": manifest, "live": live}
+
+    base_url = f"{settings['scheme']}://{host}:{settings['port']}"
+    verify = settings["ssl_verify"] if settings["scheme"] == "https" else True
+    auth = (settings["username"], settings["password"])
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0, verify=verify) as client:
+            try:
+                resp = await client.get(f"{base_url}/ari/asterisk/info", auth=auth)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    live["ari_reachable"] = True
+                    live["source"] = "direct"
+                    live["asterisk_version"] = (data.get("system") or {}).get("version")
+                    live["ari_version"] = live["asterisk_version"]
+                    live["uptime"] = (data.get("status") or {}).get("startup_time")
+                    live["last_reload"] = (data.get("status") or {}).get("last_reload_time")
+            except Exception:
+                pass
+
+            if not live["ari_reachable"]:
+                return {"mode": mode, "manifest": manifest, "live": live}
+
+            try:
+                resp = await client.get(f"{base_url}/ari/asterisk/modules", auth=auth)
+                if resp.status_code == 200:
+                    all_modules = resp.json()
+                    for req_mod in _REQUIRED_MODULES:
+                        matched = None
+                        for m in all_modules:
+                            name = m.get("name", "")
+                            if req_mod in name:
+                                matched = m
+                                break
+                        if matched:
+                            live["modules"][req_mod] = matched.get("status", "Unknown")
+                        else:
+                            live["modules"][req_mod] = "Not Found"
+            except Exception:
+                pass
+
+            try:
+                resp = await client.get(f"{base_url}/ari/applications", auth=auth)
+                if resp.status_code == 200:
+                    apps = resp.json()
+                    app_name = live["app_name"]
+                    for app in apps:
+                        if app.get("name") == app_name:
+                            live["app_registered"] = True
+                            break
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.debug("Live ARI checks failed: %s", e)
+
+    return {"mode": mode, "manifest": manifest, "live": live}

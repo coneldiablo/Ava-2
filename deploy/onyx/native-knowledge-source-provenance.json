@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "a1b9e02eb65cc114c65381cbef5e555e1753ed0a",
+  "readOnlySourceRoot": "/opt/ava-build/onyx-knowledge-20260918/native_modules/onyx",
+  "retrievedForReview": "2026-09-28",
+  "recoveredFilesSha256": {
+    "auth/knowledge.py": "f76a46e15c956c4df9328d386930c592d277b816d0ee324171833e7b2a647641",
+    "auth/knowledge_api.py": "1ef879c433293a0cdacfe9e1e336f2d415d4468081343b1c340ad4621e1ad75f",
+    "auth/knowledge_app.py": "ddeee331994bbf7919c8d131ba9b40e6d457fe50ff52a0347b7d9ab47974f48e",
+    "auth/knowledge_bootstrap.py": "078852c32eb51682acc90693894abcbd170f2de8271df5c8434acccb220ee25c",
+    "install_ingestion_search.py": "64e77953a23993029af1acf035e024df0e58d9d1ec6a6a2dc6d57202c81490d8",
+    "install_knowledge_acl.py": "c9da3f5ce2244165f8a2ad767dc3ad9a4e9be8f6b0df1bc2f8530ed8c83753c1"
+  },
+  "recoveredOperatorScriptsSha256BeforeGenericHardening": {
+    "reconcile-onyx-native-knowledge.py": "89419adcebfed9e3e76168c88dd9cfe1ea0d53d9269b1f64022ffa8342c5836e",
+    "project-onyx-native-knowledge.py": "5b4fc9190af26e577999f2ed5dcd48169dd186157e10811be55bcf28e98de9d1"
+  },
+  "liveAcceptancePerformed": false
+}

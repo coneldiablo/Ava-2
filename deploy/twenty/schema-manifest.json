@@ -1,0 +1,96 @@
+{
+  "version": "1.2",
+  "twenty_release": "v2.37.0",
+  "standard_objects": ["people", "companies", "opportunities", "tasks", "notes"],
+  "standard_object_fields": {
+    "people": ["avaBusinessId", "avaSourceId", "sourceUrl"],
+    "companies": ["avaBusinessId", "businessType", "timezone", "sourceUrl"],
+    "tasks": ["avaBusinessId", "avaSourceId", "callId", "phone", "priority", "sourceUrl"]
+  },
+  "field_definitions": {
+    "avaBusinessId": {"label": "ID бизнеса AVA", "type": "TEXT"},
+    "avaSourceId": {"label": "ID источника AVA", "type": "TEXT"},
+    "businessType": {"label": "Тип бизнеса", "type": "TEXT"},
+    "timezone": {"label": "Часовой пояс", "type": "TEXT"},
+    "callId": {"label": "ID звонка", "type": "TEXT"},
+    "channel": {"label": "Канал", "type": "TEXT"},
+    "summary": {"label": "Сводка", "type": "TEXT"},
+    "sourceUrl": {"label": "Ссылка в AVA", "type": "TEXT"},
+    "occurredAt": {"label": "Время события", "type": "DATE_TIME"},
+    "status": {"label": "Статус", "type": "TEXT"},
+    "contextName": {"label": "Контекст AVA", "type": "TEXT"},
+    "maxAttempts": {"label": "Максимум попыток", "type": "NUMBER"},
+    "createdAtAva": {"label": "Создано в AVA", "type": "DATE_TIME"},
+    "campaignId": {"label": "ID кампании", "type": "NUMBER"},
+    "leadId": {"label": "ID лида", "type": "NUMBER"},
+    "campaignSourceId": {"label": "ID кампании в AVA", "type": "TEXT"},
+    "leadSourceId": {"label": "ID лида в AVA", "type": "TEXT"},
+    "phone": {"label": "Телефон", "type": "TEXT"},
+    "attemptCount": {"label": "Количество попыток", "type": "NUMBER"},
+    "lastOutcome": {"label": "Последний результат", "type": "TEXT"},
+    "outcome": {"label": "Результат", "type": "TEXT"},
+    "durationSeconds": {"label": "Длительность, сек.", "type": "NUMBER"},
+    "text": {"label": "Текст", "type": "TEXT"},
+    "customerName": {"label": "Имя гостя", "type": "TEXT"},
+    "arrivalDate": {"label": "Дата заезда", "type": "DATE"},
+    "departureDate": {"label": "Дата выезда", "type": "DATE"},
+    "adults": {"label": "Взрослые", "type": "NUMBER"},
+    "children": {"label": "Дети", "type": "NUMBER"},
+    "priority": {"label": "Приоритет AVA", "type": "TEXT"}
+  },
+  "custom_objects": [
+    {
+      "nameSingular": "avaCall",
+      "namePlural": "avaCalls",
+      "labelSingular": "Звонок AVA",
+      "labelPlural": "Звонки AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "callId", "channel", "summary", "sourceUrl", "occurredAt"]
+    },
+    {
+      "nameSingular": "avaCampaign",
+      "namePlural": "avaCampaigns",
+      "labelSingular": "Кампания AVA",
+      "labelPlural": "Кампании AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "status", "contextName", "maxAttempts", "sourceUrl", "createdAtAva"]
+    },
+    {
+      "nameSingular": "avaCampaignMember",
+      "namePlural": "avaCampaignMembers",
+      "labelSingular": "Участник кампании AVA",
+      "labelPlural": "Участники кампаний AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "campaignSourceId", "phone", "status", "attemptCount", "lastOutcome", "sourceUrl"]
+    },
+    {
+      "nameSingular": "avaCallAttempt",
+      "namePlural": "avaCallAttempts",
+      "labelSingular": "Попытка звонка AVA",
+      "labelPlural": "Попытки звонков AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "campaignSourceId", "leadSourceId", "callId", "status", "outcome", "durationSeconds", "sourceUrl", "createdAtAva"]
+    },
+    {
+      "nameSingular": "avaFollowUpDraft",
+      "namePlural": "avaFollowUpDrafts",
+      "labelSingular": "Черновик follow-up AVA",
+      "labelPlural": "Черновики follow-up AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "status", "text", "callId", "sourceUrl", "createdAtAva"]
+    },
+    {
+      "nameSingular": "avaCustomerIdentity",
+      "namePlural": "avaCustomerIdentities",
+      "labelSingular": "Идентичность клиента AVA",
+      "labelPlural": "Идентичности клиентов AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "phone", "channel", "sourceUrl"]
+    },
+    {
+      "nameSingular": "avaBookingRequest",
+      "namePlural": "avaBookingRequests",
+      "labelSingular": "Заявка на бронирование AVA",
+      "labelPlural": "Заявки на бронирование AVA",
+      "fields": ["avaBusinessId", "avaSourceId", "status", "customerName", "arrivalDate", "departureDate", "adults", "children", "sourceUrl", "createdAtAva"]
+    }
+  ],
+  "data_policy": {
+    "allowed": ["summary", "status", "dates", "phone", "deep_links", "operational_ids"],
+    "forbidden": ["raw_transcript", "audio", "password", "api_key", "sip_secret", "pms_credentials"]
+  }
+}

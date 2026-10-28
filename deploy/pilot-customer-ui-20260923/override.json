@@ -1,0 +1,7 @@
+{
+  "services": {
+    "whatsapp_crm": {
+      "image": "ava-pilot-customer-ui:20260923"
+    }
+  }
+}

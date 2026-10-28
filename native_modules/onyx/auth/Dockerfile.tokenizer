@@ -1,0 +1,97 @@
+# Add pinned Nomic tokenizer metadata and the reviewed AVA auth lifecycle.
+# Both parents are immutable, locally verified image IDs; this build performs
+# no download and does not copy the model weights into the backend image.
+ARG ONYX_HTTP_IMAGE=ava-onyx-http@sha256:797105ac28eb6d9826850e473c97d321bc1a52f8517ba64ef2d8a54d19f5452c
+ARG ONYX_MODEL_IMAGE=onyxdotapp/onyx-model-server@sha256:2e1eecb40c47814713afb2a10b0d3217dd6d47db22f7083738283e9d6f089f61
+
+FROM ${ONYX_MODEL_IMAGE} AS tokenizer_source
+
+# The pinned model image is distroless: there is no /bin/sh.
+SHELL ["python", "-c"]
+RUN <<'PY'
+import os
+from pathlib import Path
+import shutil
+import stat
+
+revision = "3ac47f125a41961d13b397d0332866be2f9152e1"
+model = Path("/app/.cache/temp_huggingface/hub/models--nomic-ai--nomic-embed-text-v1")
+snapshot = model / "snapshots" / revision
+reference = model / "refs" / "main"
+output = Path("/tmp/ava-tokenizer-cache/models--nomic-ai--nomic-embed-text-v1")
+allowed = {
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+    "config.json",
+    "config_sentence_transformers.json",
+    "sentence_bert_config.json",
+    "modules.json",
+    "1_Pooling/config.json",
+}
+
+def plain_directory(path: Path) -> None:
+    info = path.lstat()
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+        raise SystemExit("PINNED_TOKENIZER_CACHE_INVALID")
+
+for directory in (model, model / "refs", model / "snapshots", snapshot):
+    plain_directory(directory)
+ref_info = reference.lstat()
+if (not stat.S_ISREG(ref_info.st_mode) or stat.S_ISLNK(ref_info.st_mode)
+        or reference.read_text(encoding="ascii").strip() != revision):
+    raise SystemExit("PINNED_TOKENIZER_CACHE_INVALID")
+
+copied = set()
+for relative_name in sorted(allowed):
+    source = snapshot / relative_name
+    if not source.exists() and not source.is_symlink():
+        continue
+    # Nested directories are fixed by the allowlist and must not be links.
+    parent = source.parent
+    while parent != snapshot:
+        plain_directory(parent)
+        parent = parent.parent
+    info = source.lstat()
+    resolved = source.resolve(strict=True)
+    resolved.relative_to(model / "blobs") if stat.S_ISLNK(info.st_mode) else resolved.relative_to(snapshot)
+    resolved_info = resolved.stat()
+    if not stat.S_ISREG(resolved_info.st_mode) or not 0 < resolved_info.st_size <= 64 * 1024 * 1024:
+        raise SystemExit("PINNED_TOKENIZER_CACHE_INVALID")
+    destination = output / "snapshots" / revision / relative_name
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(resolved, destination)
+    os.chmod(destination, 0o644)
+    copied.add(relative_name)
+
+if "tokenizer.json" not in copied:
+    raise SystemExit("PINNED_TOKENIZER_CACHE_REQUIRED")
+(output / "refs").mkdir(parents=True, exist_ok=True)
+# Hugging Face reads the ref verbatim as a snapshot directory name.
+(output / "refs" / "main").write_text(revision, encoding="ascii")
+os.chmod(output / "refs" / "main", 0o644)
+PY
+
+FROM ${ONYX_HTTP_IMAGE}
+
+USER root
+COPY --from=tokenizer_source --chown=1001:1001 /tmp/ava-tokenizer-cache/ /app/.cache/huggingface/hub/
+COPY --chown=0:0 native_modules/onyx/auth/core.py /app/onyx/ava_auth/core.py
+COPY --chown=0:0 native_modules/onyx/auth/app.py /app/onyx/ava_auth/app.py
+RUN chmod 0755 /app/.cache /app/.cache/huggingface /app/.cache/huggingface/hub && \
+    find /app/.cache/huggingface/hub -type d -exec chmod 0755 {} + && \
+    mkdir -p /var/lib/ava-auth && chown 1001:1001 /var/lib/ava-auth && chmod 0700 /var/lib/ava-auth
+
+ENV HF_HOME=/app/.cache/huggingface \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    AVA_NATIVE_HTTP_GUARD=true
+
+USER 1001
+RUN python - <<'PY'
+from tokenizers import Tokenizer
+
+tokenizer = Tokenizer.from_pretrained("nomic-ai/nomic-embed-text-v1")
+if not tokenizer.encode("AVA offline tokenizer smoke").ids:
+    raise SystemExit("PINNED_TOKENIZER_SMOKE_FAILED")
+PY

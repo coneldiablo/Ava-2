@@ -1,0 +1,14 @@
+node_modules
+frontend/node_modules
+frontend/dist
+crm_v2.db
+crm_v2.db-shm
+crm_v2.db-wal
+.git
+.DS_Store
+._*
+**/._*
+.playwright-mcp
+*.log
+*.sqlite
+*.db

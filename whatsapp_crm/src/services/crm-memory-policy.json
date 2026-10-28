@@ -1,0 +1,4 @@
+{
+  "version": "crm-memory-v2",
+  "domains": ["hotel", "coffee_shop", "standard"]
+}

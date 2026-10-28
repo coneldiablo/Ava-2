@@ -1,0 +1,11 @@
+# Reserved after checking the pilot host's routes and existing Docker networks.
+# Do not globally resize Docker's pools or remove other application networks.
+networks:
+  outbound:
+    ipam:
+      config:
+        - subnet: 10.253.240.0/28
+  worker:
+    ipam:
+      config:
+        - subnet: 10.253.240.16/28

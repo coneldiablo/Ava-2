@@ -1,0 +1,7 @@
+ARG AVA_ADMIN_BASE_IMAGE
+FROM ${AVA_ADMIN_BASE_IMAGE}
+
+# The production base image contains the immutable AVA shared source used by
+# Admin startup. Replace only the reviewed outbound API bridge.
+COPY admin_ui/backend/api/outbound.py /app/api/outbound.py
+LABEL ava.release.scope="customer-outbound-attempts-bridge"

@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "project": {
+    "name": "whatsapp-crm-frontend",
+    "productType": "CRM workspace",
+    "stack": [
+      "react",
+      "tailwind-v3",
+      "vite"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "src/index.css",
+      "src/components/ProductUi.css"
+    ],
+    "components": [
+      "src/components/PageHeader.tsx",
+      "src/components/SectionNavigation.tsx",
+      "src/components/MediaAttachment.tsx"
+    ],
+    "assets": [],
+    "instructions": [
+      "DESIGN.md"
+    ]
+  },
+  "design": {
+    "colorMode": "light",
+    "colors": {
+      "--neu-border": {
+        "value": "rgba(17, 17, 17, 0.1)",
+        "source": "src/index.css"
+      },
+      "--neu-border-strong": {
+        "value": "rgba(17, 17, 17, 0.22)",
+        "source": "src/index.css"
+      },
+      "--accent": {
+        "value": "#111111",
+        "source": "src/index.css"
+      },
+      "--accent-hover": {
+        "value": "#2f2f2f",
+        "source": "src/index.css"
+      },
+      "--accent-glow": {
+        "value": "rgba(17, 17, 17, 0.08)",
+        "source": "src/index.css"
+      },
+      "--accent-subtle": {
+        "value": "rgba(17, 17, 17, 0.04)",
+        "source": "src/index.css"
+      },
+      "--accent-2": {
+        "value": "#6e56ff",
+        "source": "src/index.css"
+      },
+      "--accent-2-glow": {
+        "value": "rgba(102, 102, 102, 0.14)",
+        "source": "src/index.css"
+      },
+      "--text-primary": {
+        "value": "#111111",
+        "source": "src/index.css"
+      },
+      "--text-secondary": {
+        "value": "#656565",
+        "source": "src/index.css"
+      },
+      "--text-muted": {
+        "value": "#626262",
+        "source": "src/index.css"
+      },
+      "--glass-border": {
+        "value": "rgba(255, 255, 255, 0.72)",
+        "source": "src/index.css"
+      },
+      "--conversation-outgoing-border": {
+        "value": "#cbded0",
+        "source": "src/index.css"
+      },
+      "--color-danger": {
+        "value": "#dc2626",
+        "source": "src/index.css"
+      },
+      "--color-warning": {
+        "value": "#d97706",
+        "source": "src/index.css"
+      },
+      "--color-success": {
+        "value": "#16a34a",
+        "source": "src/index.css"
+      },
+      "--color-info": {
+        "value": "#2563eb",
+        "source": "src/index.css"
+      }
+    },
+    "typography": {
+      "--conversation-outgoing-text": {
+        "value": "#1b2920",
+        "source": "src/index.css"
+      }
+    },
+    "spacing": {
+      "scale": [
+        4,
+        8,
+        12,
+        16,
+        24,
+        32
+      ],
+      "source": "src/components/ProductUi.css"
+    },
+    "radius": {},
+    "shadows": {
+      "--shadow-raised": {
+        "value": "0 16px 48px rgba(17, 17, 17, 0.06), inset 0 1px 0 rgba(255,255,255,.8)",
+        "source": "src/index.css"
+      },
+      "--shadow-raised-sm": {
+        "value": "0 10px 24px rgba(17, 17, 17, 0.08)",
+        "source": "src/index.css"
+      },
+      "--shadow-raised-lg": {
+        "value": "0 36px 90px rgba(17, 17, 17, 0.1)",
+        "source": "src/index.css"
+      },
+      "--shadow-inset": {
+        "value": "inset 0 0 0 1px rgba(17, 17, 17, 0.08)",
+        "source": "src/index.css"
+      },
+      "--shadow-inset-sm": {
+        "value": "inset 0 0 0 1px rgba(17, 17, 17, 0.1)",
+        "source": "src/index.css"
+      },
+      "--shadow-hover": {
+        "value": "0 28px 70px rgba(17, 17, 17, 0.12)",
+        "source": "src/index.css"
+      },
+      "--shadow-pressed": {
+        "value": "inset 0 0 0 1px rgba(17, 17, 17, 0.18)",
+        "source": "src/index.css"
+      }
+    },
+    "motion": {
+      "feedbackMs": 150,
+      "entranceMs": 180,
+      "reducedMotion": "no movement"
+    },
+    "density": "compact professional workspace",
+    "radii": {
+      "control": 10,
+      "surface": 18
+    }
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [
+      "native button/link/details",
+      "PageHeader",
+      "SectionNavigation",
+      "MediaAttachment",
+      "WorkspaceUi.LoadState"
+    ],
+    "patterns": [
+      "One primary task per view",
+      "Related views share section navigation",
+      "Errors retain input and expose recovery",
+      "Periods persist in URL"
+    ]
+  },
+  "constraints": {
+    "must": [
+      "Preserve existing routes and business data",
+      "Use existing Geist and Lucide",
+      "Reflow at 320px",
+      "16px mobile form inputs",
+      "Visible keyboard focus",
+      "Use business timezone; parse SQLite timestamps as UTC"
+    ],
+    "avoid": [
+      "Duplicated page editors",
+      "Decorative cards competing with the task",
+      "Color-only states",
+      "Animations on frequent queue interactions"
+    ]
+  },
+  "decisions": [
+    {
+      "date": "2026-10-24",
+      "decision": "Preserve the existing quiet neutral workspace. Group sales, results and automation; keep document tests and simulator in configuration; use the persistent business assistant for customer questions."
+    }
+  ],
+  "evidence": [
+    {
+      "fact": "design.colorMode:light",
+      "source": "src/index.css"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "src/index.css"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v3",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:vite",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-10-12T16:35:45.410Z"
+}

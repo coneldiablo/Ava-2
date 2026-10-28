@@ -1,0 +1,75 @@
+/* Sales screens: the handoff's glass panels and monochrome hierarchy, without demo data. */
+.ava-sales-page { min-width: 0; min-height: calc(100dvh - 145px); height: auto; color: #111; }
+.ava-sales-heading { margin-bottom: 18px; }
+.ava-sales-eyebrow { display: block; margin-bottom: 6px; color: #666; font-size: 10px; font-weight: 750; letter-spacing: .14em; }
+.ava-sales-heading h1 { color: #111 !important; font-size: clamp(24px, 2.5vw, 30px); letter-spacing: -.035em; }
+.ava-sales-heading h1 > svg { color: #111; }
+.ava-sales-heading h1 > .ava-sales-ai-icon { color: var(--ai); }
+.ava-sales-heading p { max-width: 680px; line-height: 1.45; }
+.ava-sales-heading a, .ava-sales-heading button { min-height: 42px; border-radius: 12px; background: rgba(255,255,255,.58) !important; color: #282828 !important; }
+.ava-sales-heading a:hover, .ava-sales-heading button:hover { background: #fff !important; border-color: #aaa !important; }
+.ava-sales-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.ava-sales-kpi { display: flex; flex-direction: column; min-height: 120px; padding: 18px 20px; border: 1px solid rgba(255,255,255,.8); border-radius: 20px; background: rgba(255,255,255,.52); box-shadow: inset 0 1px rgba(255,255,255,.85), 0 10px 30px rgba(17,17,17,.04); backdrop-filter: blur(32px) saturate(180%); }
+.ava-sales-kpi span { color: #555; font-size: 11px; font-weight: 700; }
+.ava-sales-kpi strong { margin: 6px 0 3px; font-size: clamp(27px, 3vw, 36px); line-height: 1; letter-spacing: -.045em; }
+.ava-sales-kpi small { color: #626262; font-size: 11px; }
+.ava-sales-kpi-dark { border-color: #111; background: #111; color: #fff; }
+.ava-sales-kpi-dark span, .ava-sales-kpi-dark small { color: #cacaca; }
+.ava-sales-page :is(input[type='text'], select) { font-family: 'Geist', sans-serif; }
+.ava-sales-page input[type='text'] { min-height: 40px; color: #111 !important; }
+.ava-sales-page input[type='text']::placeholder { color: #6b6b6b !important; }
+.ava-sales-page [class*='text-[#e4e6eb]'] { color: #1d1d1d !important; }
+.ava-sales-page [class*='text-[#8b8fa3]'] { color: #555 !important; }
+.ava-sales-page [class*='text-[#6b6f80]'] { color: #666 !important; }
+.ava-sales-page [class*='text-[#4a4d5a]'] { color: #666 !important; }
+.ava-sales-page [class*='text-[#00c2ff]'] { color: #111 !important; }
+.ava-sales-page [class*='text-purple-400'], .ava-sales-page [class*='text-purple-300'] { color: #5f47dc !important; }
+.ava-sales-page [class*='text-amber-400'], .ava-sales-page [class*='text-amber-300'] { color: #745212 !important; }
+.ava-sales-page [class*='text-orange-400'] { color: #95501c !important; }
+.ava-sales-page [class*='text-red-400'] { color: #a52d39 !important; }
+.ava-sales-page [class*='text-green-400'] { color: #16764a !important; }
+.ava-sales-page [class*='bg-[#1e2128]'],
+.ava-sales-page [class*='bg-[#1a1d27]'],
+.ava-sales-page [class*='bg-[#22262f]'] { background: rgba(255,255,255,.56) !important; }
+.ava-sales-page [class*='border-[#2a2e3a]'] { border-color: rgba(17,17,17,.12) !important; }
+.ava-sales-page [class*='bg-[#00c2ff]/'] { background: rgba(17,17,17,.07) !important; }
+.ava-sales-page [class~='bg-[#00c2ff]'] { background: #111 !important; color: #fff !important; }
+.ava-sales-page [class*='border-[#00c2ff]'] { border-color: #858585 !important; }
+.ava-sales-page [class*='bg-purple-500/'] { background: var(--ai-soft) !important; }
+.ava-sales-page [class*='border-purple-500/'] { border-color: rgba(110,86,255,.23) !important; }
+.ava-sales-page :is(a, button, input, select):focus-visible { outline: 3px solid #5f47dc !important; outline-offset: 2px; }
+.ava-sales-columns { min-height: 520px; scrollbar-color: #c3c3c6 transparent; }
+.ava-sales-columns > div { border-radius: 18px !important; border-color: rgba(255,255,255,.75) !important; background: rgba(255,255,255,.36) !important; box-shadow: inset 0 1px rgba(255,255,255,.85), 0 10px 32px rgba(17,17,17,.045); backdrop-filter: blur(28px) saturate(150%); }
+.ava-sales-columns > div > div:first-child { background: rgba(255,255,255,.48) !important; }
+.ava-sales-columns .group { border-radius: 13px; box-shadow: 0 2px 8px rgba(17,17,17,.035); }
+.ava-stage-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #111; }
+.ava-stage-count { background: rgba(17,17,17,.07) !important; color: #111 !important; }
+.ava-sales-table-wrap { border-color: rgba(255,255,255,.75) !important; background: rgba(255,255,255,.44) !important; box-shadow: inset 0 1px rgba(255,255,255,.85), 0 12px 34px rgba(17,17,17,.045); backdrop-filter: blur(32px) saturate(160%); }
+.ava-sales-table-wrap table { border-collapse: separate; border-spacing: 0; }
+.ava-sales-table-wrap thead { background: #f4f4f5 !important; }
+.ava-sales-table-wrap th { color: #555; }
+.ava-sales-table-wrap tbody tr:hover { background: rgba(255,255,255,.52) !important; }
+.ava-sales-table-wrap td { vertical-align: middle; }
+.ava-sales-table-wrap .lead-status-select { min-height: 44px; background-color: #fff; }
+@media (max-width: 760px) {
+  .ava-sales-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .ava-sales-page { min-height: calc(100dvh - 120px); }
+  .ava-sales-columns { min-height: 480px; }
+}
+@media (max-width: 520px) {
+  .ava-sales-kpis { grid-template-columns: 1fr; gap: 8px; }
+  .ava-sales-kpi { min-height: 92px; padding: 14px 16px; }
+  .ava-sales-heading h1 { font-size: 23px; }
+  .ava-sales-heading a, .ava-sales-heading button { min-height: 44px; }
+  .ava-sales-page button[title], .ava-sales-page a[title] { min-width: 44px; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .ava-sales-page *, .ava-sales-page *::before, .ava-sales-page *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+.ava-customer-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
+.ava-customer-scope button { min-height: 44px; padding: 8px 14px; border-radius: 12px; background: #fff; border: 1px solid #d7d6de; color: #312c3e; font-size: 14px; }
+.ava-customer-scope button[aria-pressed="true"] { background: #211d2b; color: #fff; border-color: #211d2b; }
+.ava-customer-scope button:focus-visible { outline: 2px solid #7059aa; outline-offset: 3px; }
+.ava-customer-scope span { color: #625d70; font-size: 14px; }
+
+.ava-customer-batch { border: 1px solid #d8d3e3; background: #fff; border-radius: 16px; padding: 18px; margin-bottom: 14px; font-size: 14px; color: #312c3e; }
+.ava-customer-batch h2 { font-size: 18px; font-weight: 600; }.ava-customer-batch p { margin: 8px 0; }.ava-customer-batch a,.ava-customer-batch button { display: inline-flex; min-height: 44px; align-items: center; text-decoration: underline; margin-right: 12px; }

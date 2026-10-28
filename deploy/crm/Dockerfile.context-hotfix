@@ -1,0 +1,8 @@
+# Preserve the reviewed deployed CRM image, dependencies and frontend.
+# Build with a verified local BASE_IMAGE and --network none.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY whatsapp_crm/src/services/sales-brain.service.js /app/src/services/sales-brain.service.js
+COPY whatsapp_crm/src/services/pms/pms.service.js /app/src/services/pms/pms.service.js
+COPY whatsapp_crm/src/services/pms/pms-store.service.js /app/src/services/pms/pms-store.service.js
+RUN node --check /app/src/services/sales-brain.service.js && node --check /app/src/services/pms/pms.service.js && node --check /app/src/services/pms/pms-store.service.js

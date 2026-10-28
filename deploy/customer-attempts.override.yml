@@ -1,0 +1,8 @@
+# Scoped customer release: extend the already-running Admin image with the
+# outbound-attempt bridge. The base image carries /opt/ava-runtime-source and
+# the server requires it when AVA_SHARED_SOURCE_ROOT is set.
+# Layer after existing production overrides; do not rebuild unrelated services.
+services:
+  admin_ui:
+    image: ava-customer-admin:${AVA_RELEASE_SHA:?Set AVA_RELEASE_SHA to the reviewed commit}-attempts
+    pull_policy: never

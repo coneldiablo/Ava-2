@@ -1,0 +1,9 @@
+ARG AVA_CRM_BASE_IMAGE
+FROM ${AVA_CRM_BASE_IMAGE}
+
+# Build context: reviewed Git source plus a freshly built frontend/dist from
+# the same commit. The base is the exact running image, not a mutable tag.
+COPY whatsapp_crm/src/ /app/src/
+RUN rm -rf /app/frontend/dist
+COPY whatsapp_crm/frontend/dist/ /app/frontend/dist/
+LABEL ava.release.scope="customer-crm-ui-calls-and-live-onyx-fixes"

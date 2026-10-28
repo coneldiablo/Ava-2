@@ -1,0 +1,117 @@
+name: ava-twenty
+
+x-twenty-environment: &twenty-environment
+  NODE_PORT: 3000
+  PG_DATABASE_URL: postgres://${TWENTY_DB_USER:-twenty}:${TWENTY_DB_PASSWORD:?set TWENTY_DB_PASSWORD}@db:5432/${TWENTY_DB_NAME:-twenty}
+  SERVER_URL: ${TWENTY_PUBLIC_URL:?set TWENTY_PUBLIC_URL}
+  REDIS_URL: redis://:${TWENTY_REDIS_PASSWORD:?set TWENTY_REDIS_PASSWORD}@redis:6379
+  STORAGE_TYPE: local
+  ENCRYPTION_KEY: ${TWENTY_ENCRYPTION_KEY:?set TWENTY_ENCRYPTION_KEY}
+  FALLBACK_ENCRYPTION_KEY: ${TWENTY_FALLBACK_ENCRYPTION_KEY:-}
+  APP_SECRET: ${TWENTY_APP_SECRET:?set TWENTY_APP_SECRET}
+  # v2.37 SecureHttpClient logs full webhook URLs at the "log" level.
+  # Keep warnings/errors; bridge delivery/status remains in AVA's safe audit.
+  LOG_LEVELS: "error,warn"
+
+services:
+  server:
+    image: twentycrm/twenty:${TWENTY_IMAGE_TAG:-v2.37.0}
+    environment:
+      <<: *twenty-environment
+      DISABLE_DB_MIGRATIONS: "false"
+      DISABLE_CRON_JOBS_REGISTRATION: "false"
+    volumes:
+      - server-local-data:/app/packages/twenty-server/.local-storage
+    ports:
+      - "127.0.0.1:${TWENTY_HOST_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:3000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "6"
+    restart: unless-stopped
+
+  worker:
+    image: twentycrm/twenty:${TWENTY_IMAGE_TAG:-v2.37.0}
+    command: ["yarn", "worker:prod"]
+    environment:
+      <<: *twenty-environment
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    volumes:
+      - server-local-data:/app/packages/twenty-server/.local-storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "6"
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${TWENTY_DB_NAME:-twenty}
+      POSTGRES_USER: ${TWENTY_DB_USER:-twenty}
+      POSTGRES_PASSWORD: ${TWENTY_DB_PASSWORD:?set TWENTY_DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TWENTY_DB_USER:-twenty} -d ${TWENTY_DB_NAME:-twenty}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "6"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory-policy
+      - noeviction
+      - --requirepass
+      - ${TWENTY_REDIS_PASSWORD:?set TWENTY_REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${TWENTY_REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    environment:
+      TWENTY_REDIS_PASSWORD: ${TWENTY_REDIS_PASSWORD:?set TWENTY_REDIS_PASSWORD}
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "6"
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  redis-data:
+  server-local-data:

@@ -1,0 +1,14 @@
+# Apply only after workspace DNS + TLS and a verified recovery snapshot.
+# Keep the existing server image, storage, auth secrets and encryption keys.
+x-workspace-environment: &workspace-environment
+  IS_MULTIWORKSPACE_ENABLED: "true"
+  DEFAULT_SUBDOMAIN: app
+  IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS: "true"
+
+services:
+  server:
+    environment:
+      <<: *workspace-environment
+  worker:
+    environment:
+      <<: *workspace-environment

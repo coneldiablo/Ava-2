@@ -1,0 +1,309 @@
+/* AVA visual layer for Keycloak 26.7.3's classic login template.
+   Authentication markup, actions, validation, and password handling remain native. */
+:root {
+  color-scheme: light;
+  --ava-ink: #121716;
+  --ava-muted: #626a67;
+  --ava-line: #d9dfdc;
+  --ava-focus: #49765a;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #f2f4f1 !important;
+  background-image: none !important;
+  color: var(--ava-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: radial-gradient(circle at 84% 5%, #ffffff 0, transparent 40%), #f2f4f1 !important;
+}
+
+.login-pf-page {
+  display: grid !important;
+  grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
+  width: min(1152px, calc(100% - 64px));
+  min-height: min(720px, calc(100dvh - 64px));
+  margin: 32px auto !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid rgba(18, 23, 22, .08);
+  border-radius: 30px;
+  background: #ffffff;
+  box-shadow: 0 30px 90px rgba(18, 23, 22, .10);
+}
+
+#kc-header.login-pf-page-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  grid-column: 1;
+  min-width: 0;
+  width: auto !important;
+  height: auto;
+  margin: 0 !important;
+  padding: clamp(32px, 4vw, 60px) !important;
+  overflow: hidden;
+  isolation: isolate;
+  background: #111615;
+  color: #f8faf8;
+  text-align: left;
+}
+
+#kc-header::before {
+  content: "A";
+  position: absolute;
+  z-index: -1;
+  right: -7%;
+  bottom: -19%;
+  color: rgba(255, 255, 255, .045);
+  font-size: clamp(380px, 42vw, 660px);
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+#kc-header::after {
+  content: "Разговоры, которые\A двигают бизнес.";
+  display: block;
+  max-width: 520px;
+  margin-top: auto;
+  padding-top: 120px;
+  color: #f8faf8;
+  font-size: clamp(39px, 4vw, 62px);
+  font-weight: 750;
+  letter-spacing: -.055em;
+  line-height: 1.06;
+  white-space: pre-line;
+}
+
+#kc-header-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: fit-content;
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 27px !important;
+  font-weight: 800;
+  letter-spacing: .14em;
+  line-height: 1;
+  text-align: left;
+}
+
+#kc-header-wrapper::before {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #f3f6f3 url("../img/ava-mark.svg") center / 32px no-repeat;
+}
+
+.card-pf {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  grid-column: 2;
+  min-width: 0;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: clamp(36px, 5vw, 80px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  color: var(--ava-ink);
+}
+
+.login-pf-header,
+#kc-content {
+  width: 100% !important;
+  max-width: 450px;
+  margin-right: auto !important;
+  margin-left: auto !important;
+}
+
+.login-pf-header {
+  margin-bottom: 32px !important;
+  text-align: left !important;
+}
+
+.login-pf-header::before {
+  content: "ВАШЕ ПРОСТРАНСТВО AVA";
+  display: block;
+  margin-bottom: 14px;
+  color: #56635c;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .21em;
+}
+
+.login-pf-header::after {
+  content: "Один вход для клиентов, диалогов и знаний вашего бизнеса.";
+  display: block;
+  max-width: 390px;
+  margin-top: 14px;
+  color: var(--ava-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+#kc-page-title {
+  margin: 0 !important;
+  color: var(--ava-ink) !important;
+  font-size: clamp(33px, 3.2vw, 46px) !important;
+  font-weight: 780;
+  letter-spacing: -.055em;
+  line-height: 1.12;
+  text-align: left;
+}
+
+#kc-form-login .form-group {
+  margin: 0 0 22px !important;
+}
+
+#kc-form-login label {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #252b28 !important;
+  font-size: 14px;
+  font-weight: 670;
+  line-height: 1.4;
+}
+
+#kc-form-login input[type="text"],
+#kc-form-login input[type="email"],
+#kc-form-login input[type="password"] {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--ava-line) !important;
+  border-radius: 14px !important;
+  outline: none;
+  background: #f8faf8 !important;
+  color: var(--ava-ink) !important;
+  font: inherit;
+  font-size: 16px !important;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+#kc-form-login input:hover {
+  border-color: #9aa99f !important;
+}
+
+#kc-form-login input:focus,
+#kc-form-login input:focus-visible {
+  border-color: var(--ava-focus) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(73, 118, 90, .20) !important;
+}
+
+#kc-form-login .pf-c-input-group {
+  display: flex;
+  width: 100%;
+  border-radius: 14px;
+  background: #f8faf8;
+}
+
+#kc-form-login .pf-c-input-group input {
+  min-width: 0;
+  border-radius: 14px 0 0 14px !important;
+}
+
+#kc-form-login .pf-c-input-group button {
+  min-width: 56px;
+  min-height: 56px;
+  border: 1px solid var(--ava-line);
+  border-left: 0;
+  border-radius: 0 14px 14px 0;
+  background: #f8faf8;
+  color: #424a45;
+}
+
+#kc-form-login .pf-c-input-group button:focus-visible,
+#kc-form-login a:focus-visible,
+#kc-login:focus-visible {
+  outline: 3px solid var(--ava-focus) !important;
+  outline-offset: 3px;
+}
+
+#kc-form-buttons {
+  margin-bottom: 0 !important;
+}
+
+#kc-login {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  margin-top: 8px;
+  border: 1px solid #111615 !important;
+  border-radius: 14px !important;
+  background: #111615 !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: pointer;
+  transition: background-color .18s ease, transform .18s ease;
+}
+
+#kc-login:hover { background: #2b3430 !important; }
+#kc-login:active { transform: translateY(1px); }
+
+.alert,
+#input-error,
+[id^="input-error-"] {
+  color: #8a2f35;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alert {
+  border: 1px solid #eac7c9;
+  border-radius: 12px;
+  background: #fff3f3;
+}
+
+@media (max-width: 900px) {
+  .login-pf-page {
+    display: flex !important;
+    flex-direction: column;
+    width: min(100% - 32px, 560px);
+    min-height: 0;
+    margin: 16px auto !important;
+    border-radius: 24px;
+  }
+  #kc-header.login-pf-page-header { min-height: 200px; padding: 30px !important; }
+  #kc-header::before { right: 0; bottom: -125px; font-size: 390px; }
+  #kc-header::after { padding-top: 35px; font-size: clamp(30px, 7vw, 38px); }
+  .card-pf { padding: 40px 32px 48px !important; }
+}
+
+@media (max-width: 480px) {
+  .login-pf-page {
+    width: 100%;
+    min-height: 100dvh;
+    margin: 0 !important;
+    border: 0;
+    border-radius: 0;
+  }
+  #kc-header.login-pf-page-header { min-height: 178px; padding: 24px !important; }
+  #kc-header-wrapper { gap: 12px; font-size: 22px !important; }
+  #kc-header-wrapper::before { width: 40px; height: 40px; background-size: 26px; }
+  #kc-header::after { padding-top: 28px; font-size: 30px; }
+  .card-pf { flex: 1; justify-content: flex-start; padding: 40px 24px 48px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #kc-form-login input,
+  #kc-login { transition: none !important; }
+  #kc-login:active { transform: none; }
+}

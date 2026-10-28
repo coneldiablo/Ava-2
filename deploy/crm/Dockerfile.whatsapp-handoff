@@ -1,0 +1,5 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY whatsapp_crm/src/services/whatsapp.service.js /app/src/services/whatsapp.service.js
+COPY whatsapp_crm/src/services/whatsapp-handoff.service.js /app/src/services/whatsapp-handoff.service.js
+RUN node --check /app/src/services/whatsapp.service.js && node --check /app/src/services/whatsapp-handoff.service.js

@@ -1,0 +1,9 @@
+# Append after the active production compose files so both sides of the
+# tenant-scoped call statistics API switch together. No unrelated services.
+services:
+  admin_ui:
+    image: ava-customer-admin:${AVA_CALL_ANALYTICS_SHA:?Set AVA_CALL_ANALYTICS_SHA to the reviewed commit}-calls
+    pull_policy: never
+  whatsapp_crm:
+    image: ava-customer-crm:${AVA_CALL_ANALYTICS_SHA:?Set AVA_CALL_ANALYTICS_SHA to the reviewed commit}
+    pull_policy: never

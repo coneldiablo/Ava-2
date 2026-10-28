@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "baseImage": "sha256:ac87d268d87b7f2dba6e92c77df6d6998a826ac7d9cf0be01936bca5764871f3",
+  "packageVersion": "0.23.4",
+  "preserved": {
+    "target": "/app/node_modules/whatsapp-web.js/src/structures/Message.js",
+    "sha256": "d4a96549534f18a4afaa5d871ac9518bd3e675a683259eaa5ab778ce729659c8"
+  },
+  "files": [
+    {
+      "target": "/app/dist/engine/adapters/message-mapper.js",
+      "before": "2b62bc08eed111986376c71e6869fc72b5d699be8c99495c2f47cc87252e9615",
+      "after": "9e245179539e09187f198347e5ddfe8686324e51086ea17296558999ac275979"
+    },
+    {
+      "target": "/app/dist/engine/adapters/wwebjs-message-events.js",
+      "before": "49e191d90b210ad13c226427136930e38e4c529e005c716c61fe1d5f40776063",
+      "after": "25088f69b50f27a5b59a5fdb1ba91f0ed662f3373904749b51b1619e7befe067"
+    },
+    {
+      "target": "/app/dist/engine/adapters/wwebjs-messaging.js",
+      "before": "ed2165cddac89872c53ff9d49d30dbd9b6e8d5e512c49307aae627c2260e86bf",
+      "after": "ff78af50abc9d1d587585aff0519d3a0b567691f8642cb1c736e5ebae20a56da"
+    },
+    {
+      "target": "/app/dist/modules/session/message-row.mapper.js",
+      "before": "abc0dbf18202f1f5fd796f8b799af328e98857abdbd001f7221cb60b7d817f99",
+      "after": "2d7bd2066ea7297b3ce2e29f22bedd09f8914336e229daef4ee05239a02a0eb3"
+    }
+  ]
+}

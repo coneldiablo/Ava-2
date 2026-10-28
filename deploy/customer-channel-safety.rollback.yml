@@ -1,0 +1,4 @@
+services:
+  whatsapp_crm:
+    image: ava-customer-crm:${AVA_CUSTOMER_ROLLBACK_SHA:?Set AVA_CUSTOMER_ROLLBACK_SHA to the previous reviewed release}
+    pull_policy: never

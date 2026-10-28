@@ -1,0 +1,28 @@
+# Merge with the root compose only after release review. No published port,
+# Docker socket, SSH key, native admin key or complete project bind mount.
+services:
+  module_access_broker:
+    image: ${AVA_MODULE_BROKER_IMAGE:?Use the reviewed CRM image pinned by digest}
+    command: [node, module-access-server.js]
+    environment:
+      NODE_ENV: production
+      AVA_PROCESS_ROLE: module-access-broker
+      DB_PATH: /app/data/crm_v2.db
+    volumes:
+      - ${AVA_CRM_DATA_DIR:?Set the reviewed absolute CRM data directory}:/app/data
+    networks:
+      module_access:
+        aliases: [ava-module-access]
+    mem_limit: 384m
+    cpus: 1
+    pids_limit: 128
+    read_only: true
+    tmpfs: [/tmp:rw,nosuid,nodev,noexec,size=16m]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    stop_grace_period: 15s
+networks:
+  module_access:
+    name: ava-module-access
+    internal: true

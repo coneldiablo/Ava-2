@@ -1,0 +1,10 @@
+# Apply after ava-worker.override.yml for a bounded customer-access pilot.
+# The process serves the private invitation redemption RPC and Keycloak-only
+# disable/logout verification. It does not lease business provisioning jobs,
+# inspect/revoke module sessions, run sync recovery, or contact Twenty/Onyx.
+services:
+  provisioning_worker:
+    environment:
+      AVA_PROVISIONING_JOBS_ENABLED: "false"
+      AVA_ISOLATED_MODULES_ENABLED: "false"
+      AVA_TWENTY_SYNC_RECOVERY_ENABLED: "false"

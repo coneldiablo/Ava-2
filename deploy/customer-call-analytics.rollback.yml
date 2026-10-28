@@ -1,0 +1,8 @@
+# The exact images running before the customer call-analytics release.
+services:
+  admin_ui:
+    image: ava-customer-admin:dd9c2e7-attempts
+    pull_policy: never
+  whatsapp_crm:
+    image: ava-customer-crm:08e2288
+    pull_policy: never

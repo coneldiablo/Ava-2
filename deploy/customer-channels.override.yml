@@ -1,0 +1,13 @@
+# Layer this on top of the already-running AVA compose files for a scoped CRM rollout.
+# The release image is built from the reviewed commit before `up --no-build`.
+services:
+  whatsapp_crm:
+    image: ava-customer-crm:${AVA_RELEASE_SHA:?Set AVA_RELEASE_SHA to the reviewed commit}
+    pull_policy: never
+    environment:
+      CHANNEL_CREDENTIALS_MASTER_KEY: ${CHANNEL_CREDENTIALS_MASTER_KEY:?Set a persistent 32-byte channel key}
+  provisioning_worker:
+    # Preserve the worker's separately reviewed Onyx image and add only the
+    # shared key used when it reads tenant channel settings.
+    environment:
+      CHANNEL_CREDENTIALS_MASTER_KEY: ${CHANNEL_CREDENTIALS_MASTER_KEY:?Set a persistent 32-byte channel key}

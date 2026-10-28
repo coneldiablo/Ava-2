@@ -1,0 +1,10 @@
+# Build context: the prepared pinned Onyx `backend/` tree, not this folder.
+# This is the guarded Community HTTP image; Dockerfile remains the separate
+# private auth-peer sidecar recipe.
+ARG ONYX_STORAGE_IMAGE
+FROM ${ONYX_STORAGE_IMAGE}
+USER root
+COPY onyx /app/onyx
+USER 1001
+ENV PYTHONPATH=/app
+ENV AVA_NATIVE_HTTP_GUARD=true

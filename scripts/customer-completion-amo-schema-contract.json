@@ -1,0 +1,118 @@
+{
+  "columns": {
+    "instances": [
+      {
+        "name": "voiceAmbient",
+        "definition": "TEXT",
+        "defaultValue": null
+      }
+    ],
+    "whatsapp_response_settings": [
+      {
+        "name": "typingEnabled",
+        "definition": "INTEGER NOT NULL DEFAULT 0 CHECK(typingEnabled IN (0,1))",
+        "defaultValue": 0
+      }
+    ],
+    "ava_self_registrations": [
+      {
+        "name": "flow",
+        "definition": "TEXT NOT NULL DEFAULT 'registration'",
+        "defaultValue": "registration"
+      }
+    ]
+  },
+  "newTables": [
+    "ava_business_preparation",
+    "customer_catalog_imports",
+    "customer_catalog_keys",
+    "customer_external_connections",
+    "customer_external_operations",
+    "customer_external_links",
+    "customer_external_entities",
+    "customer_external_progress",
+    "customer_external_callbacks",
+    "customer_external_exports",
+    "ava_campaign_imports",
+    "ava_campaign_drafts",
+    "ava_campaign_commands",
+    "ava_campaign_sources",
+    "customer_commercial_invoice_versions",
+    "whatsapp_media_inputs",
+    "whatsapp_response_settings",
+    "whatsapp_document_deliveries",
+    "ava_workspace_document_actions",
+    "customer_amo_catalog_previews",
+    "customer_amo_catalog_sources",
+    "customer_amo_catalog_settings"
+  ],
+  "triggerReplacements": [
+    {
+      "name": "whatsapp_inbound_reply_job",
+      "table": "messages",
+      "baseSqlHash": "fbb9d9e7e9950e49f17b1a82d991afda9ebe474ae28194520ec68170503df867",
+      "sqlHash": "fbb9d9e7e9950e49f17b1a82d991afda9ebe474ae28194520ec68170503df867"
+    }
+  ],
+  "initializers": [
+    [
+      "identity/identity-store",
+      "ensureSchema"
+    ],
+    [
+      "ava-workspace.store",
+      "ensureSchema"
+    ],
+    [
+      "ava-autopilot.store",
+      "ensureSchema"
+    ],
+    [
+      "catalog.store",
+      "ensureSchema"
+    ],
+    [
+      "commercial-documents.service",
+      "ensureSchema"
+    ],
+    [
+      "integrations/store",
+      "schema"
+    ],
+    [
+      "telephony/campaigns",
+      "ensureSchema"
+    ],
+    [
+      "whatsapp-response-settings.service",
+      "ensureSchema"
+    ],
+    [
+      "whatsapp-media.service",
+      "ensureSchema"
+    ],
+    [
+      "whatsapp-attachments.service",
+      "ensureSchema"
+    ],
+    [
+      "whatsapp.service",
+      "_ensureReplySchema"
+    ],
+    [
+      "onboarding-state.service",
+      "ensureSchema"
+    ],
+    [
+      "identity/self-registration.service",
+      "ensureSchema",
+      {
+        "cleanup": false
+      }
+    ],
+    [
+      "integrations/amocrm-catalog",
+      "schema"
+    ]
+  ]
+}

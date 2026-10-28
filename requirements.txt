@@ -1,0 +1,41 @@
+# Core ARI and WebSocket dependencies
+ari==0.1.3
+websockets==15.0.1
+aiohttp==3.14.3
+
+# Configuration and logging
+pydantic>=2.7.0
+pydantic_settings==2.14.2
+structlog==25.5.0
+prometheus-client==0.24.1
+PyYAML==6.0.3
+
+# Audio resampling (numpy linear interpolation for artifact-free streaming)
+numpy>=1.24.0
+
+# Utilities
+tenacity==8.2.3
+
+# WebRTC VAD for robust speech detection
+webrtcvad==2.0.10
+
+# Email tools dependencies
+resend>=2.0.0
+jinja2==3.1.6
+dnspython==2.8.0
+
+# OpenAI for summary generation
+openai>=1.0.0
+
+# Google Auth for Vertex AI Live API OAuth2/ADC support (AAVA-191)
+# Only required when use_vertex_ai: true in provider config
+google-auth>=2.0.0
+# Explicit transport dependency for bounded ADC refresh (Neuro + Vertex text).
+requests>=2.32,<3
+# Validate Gemini tool arguments before invoking existing AVA tools.
+jsonschema>=4.23,<5
+
+# Google Calendar API client for business calendar tool
+google-api-python-client>=2.0.0
+azure-cognitiveservices-speech>=1.41.0
+httpx>=0.27.0

@@ -1,0 +1,46 @@
+:root {
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
+    --radius-control: 10px; --radius-surface: 18px;
+    --type-caption: 13px; --type-body: 14px; --type-section: 18px; --type-title: 26px;
+    --control-border: #858585; --focus-ring: #4033c9;
+    --motion-feedback: 150ms;
+}
+.ava-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-6); margin-block-end: var(--space-6); min-inline-size: 0; }
+.ava-page-header > div { min-inline-size: 0; }
+.ava-page-header h1 { font-size: var(--type-title); line-height: 1.25; letter-spacing: -.02em; font-weight: 650; color: var(--text-primary); text-wrap: balance; overflow-wrap: anywhere; }
+.ava-eyebrow { color: var(--text-secondary); font-size: var(--type-caption); line-height: 1.5; margin-block-end: var(--space-1); }
+.ava-page-description { color: var(--text-secondary); font-size: var(--type-body); line-height: 1.5; max-inline-size: 70ch; margin-block-start: var(--space-2); text-wrap: pretty; }
+.ava-page-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.ava-section-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); margin-block-end: var(--space-6); padding-block-end: var(--space-3); border-block-end: 1px solid var(--neu-border); }
+.ava-section-nav a { min-block-size: 40px; display: inline-flex; align-items: center; padding: 8px 14px; border-radius: var(--radius-control); color: var(--text-secondary); font-size: var(--type-body); line-height: 1.5; text-decoration: none; }
+.ava-section-nav a[aria-current=page] { background: var(--accent); color: #fff; font-weight: 600; }
+.ava-section-nav a:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.ava-mode-summary { padding: var(--space-4); border: 1px solid var(--neu-border); border-radius: var(--radius-surface); margin-block-end: var(--space-6); }
+.ava-mode-summary h2 { font-size: var(--type-section); line-height: 1.3; }
+.ava-mode-summary dl { display: flex; flex-wrap: wrap; gap: 16px 32px; margin-block-start: var(--space-4); }
+.ava-mode-summary dt { font-size: var(--type-caption); color: var(--text-secondary); }
+.ava-mode-summary dd { margin-block-start: 4px; font-size: var(--type-body); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ava-mode-summary p { font-size: var(--type-body); line-height: 1.5; max-inline-size: 70ch; margin-block-start: 12px; }
+.ava-mode-summary a { text-decoration: underline; text-underline-offset: 3px; }
+@media (hover: hover) { .ava-section-nav a:not([aria-current]):hover { background: var(--accent-subtle); color: var(--text-primary); } }
+@media (prefers-reduced-motion: no-preference) {
+    .ava-section-nav a { transition: background-color var(--motion-feedback), color var(--motion-feedback); }
+    .ava-page-header { animation: ava-header-enter 180ms ease-out; }
+    @keyframes ava-header-enter { from { opacity: .5; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+@media (max-width: 600px) {
+    .ava-page-header { flex-direction: column; gap: var(--space-4); }
+    .ava-page-header h1 { font-size: 24px; }
+    .ava-section-nav { gap: 4px; }
+    .ava-section-nav a { padding-inline: 10px; }
+    input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
+}
+@media (forced-colors: active) { .ava-section-nav a { border: 1px solid ButtonText; } .ava-section-nav a[aria-current=page] { outline: 2px solid Highlight; } }
+
+/* Route focus announces the content landmark without drawing a frame around the entire page. */
+.crm-main:focus { outline: none; }
+
+.crm-main .crm-content h1 { font-size: var(--type-title); line-height: 1.25; letter-spacing: -.02em; }
+.crm-topbar .crm-business-context { min-inline-size: 0; }
+.crm-topbar .crm-business-context span { font-size: 14px; line-height: 1.4; letter-spacing: normal; text-transform: none; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .crm-main .crm-content h1 { font-size: 24px; } }

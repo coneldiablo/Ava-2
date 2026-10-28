@@ -1,0 +1,10 @@
+# Targeted backend security release; preserve the exact deployed UI/dependencies.
+# Build only with a locally retained, verified rollback image as BASE_IMAGE.
+# The standard admin_ui/Dockerfile remains the full clean-build entrypoint.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY admin_ui/backend/api/onyx.py /app/api/onyx.py
+COPY admin_ui/backend/api/onyx_mcp.py /app/api/onyx_mcp.py
+COPY admin_ui/backend/main.py /app/main.py
+COPY admin_ui/backend/auth.py /app/auth.py
+RUN python3 -m compileall -q /app/api/onyx.py /app/api/onyx_mcp.py /app/main.py /app/auth.py

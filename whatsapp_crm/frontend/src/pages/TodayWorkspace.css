@@ -1,0 +1,79 @@
+/* Workday additions keep the shared Home surfaces intact. */
+.aw-today-summary { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 12px; align-items:flex-start; }
+.aw-today-summary > details { flex:1; min-width:260px; max-width:100%; font-size:12px; }
+.aw-today-summary summary { min-height:44px; padding:10px 12px; cursor:pointer; }
+.aw-today-summary summary svg { display:inline-block; vertical-align:middle; margin-right:6px; }
+.aw-today-summary summary span { margin-left:8px; color:var(--aw-muted); }
+.aw-today-summary details[open] { padding-bottom:10px; }
+.aw-today-summary ul { margin:0; padding:0 12px; list-style:none; max-height:240px; overflow:auto; }
+.aw-today-summary li { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 0; border-top:1px solid var(--aw-border); }
+.aw-today-summary li > div { min-width:0; flex:1 1 120px; }
+.aw-today-summary small { display:block; color:var(--aw-muted); margin-top:4px; }
+.aw-today-summary p { margin:4px 0; overflow-wrap:anywhere; }
+.aw-today-summary select { max-width:145px; }
+.aw-today-summary .aw-link-button { margin:4px 12px; }
+.aw-today-capacity { display:flex; gap:8px; flex-basis:100%; }
+.aw-today-capacity label { min-width:0; flex:1; }
+.aw-today-capacity input { width:100%; min-width:0; }
+.aw-today-queue-flow { display:flex; flex-wrap:wrap; gap:8px; }
+.aw-today-queue-flow .aw-button { flex:1 1 130px; }
+.aw-today-queue-flow small { flex-basis:100%; color:var(--aw-muted); }
+.aw-today-next { display:flex; gap:8px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--aw-border); flex:none; }
+.aw-today-next small { color:var(--aw-muted); font-size:11px; }
+.aw-today-presence { padding:0 12px; font-size:12px; color:var(--aw-muted); flex:none; }
+.aw-today-presence:not(:empty) { padding-block:8px; border-bottom:1px solid var(--aw-border); }
+.aw-today-presence span { display:block; }
+.aw-today-copilot { padding:12px; border-bottom:1px solid var(--aw-border); font-size:12px; }
+.aw-today-copilot-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.aw-today-copilot-actions > span { display:flex; align-items:center; gap:5px; flex-basis:100%; font-weight:600; }
+.aw-today-copilot-review { margin-top:12px; }
+.aw-today-copilot-review label { display:block; margin-bottom:6px; }
+.aw-today-copilot-review textarea { width:100%; min-height:80px; max-height:160px; }
+.aw-today-copilot-review .aw-item-actions { flex-wrap:wrap; margin-top:8px; }
+.aw-workday .aw-button, .aw-workday select { min-height:44px; }
+.aw-workday :is(button,input,textarea,select,summary,a):focus-visible { outline:2px solid var(--ai,#6e56ff); outline-offset:3px; }
+.aw-workday .aw-client-heading h2:focus { outline:2px solid var(--ai,#6e56ff); outline-offset:3px; }
+.aw-workday .aw-timeline { min-height:80px; }
+.aw-workday .aw-conversation { min-width:0; overflow-y:auto; }
+@media (max-width:700px) {
+ .aw-workday .aw-today-summary > details { min-width:0; flex-basis:100%; }
+ .aw-has-client .aw-today-summary { display:none; }
+ .aw-workday .aw-queue { max-height:calc(100dvh - 200px); }
+ .aw-workday .aw-queue-list { overflow:auto; }
+ .aw-today-next { align-items:flex-start; flex-wrap:wrap; }
+ .aw-today-copilot-actions .aw-button { flex:1 1 130px; }
+ .aw-workday .aw-composer-footer { align-items:flex-start; flex-wrap:wrap; }
+ .aw-workday .aw-composer-footer small { max-width:100%; flex:1 1 120px; }
+}
+@media (prefers-reduced-motion:reduce) { .aw-workday *, .aw-workday *::before, .aw-workday *::after { scroll-behavior:auto; transition:none; animation:none; } }
+
+.aw-inline-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.aw-inline-form fieldset:disabled { opacity: .7; }
+.aw-history-older { margin: 8px 16px; align-self: center; }
+.aw-reply-recovery { margin: 12px 16px; padding: 16px; border: 1px solid var(--border-color, #d6d3e0); border-radius: 16px; background: var(--bg-secondary, #faf9fc); }
+.aw-reply-recovery h3 { font-weight: 600; margin-bottom: 8px; }
+.aw-reply-recovery p { overflow-wrap: anywhere; }
+.aw-confirmation { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.5; }
+.aw-confirmation input { width: 20px; min-height: 20px; flex: 0 0 20px; margin-top: 2px; }
+
+.aw-client-phone { display:block; font-size:.875rem; font-variant-numeric:tabular-nums; color:var(--text-muted,#676573); }
+.aw-contact-links { min-width:0; --ci-ink:var(--aw-text,#171717); --ci-muted:var(--aw-muted,#5f6067); --ci-line:var(--aw-border,#e7e7ea); --ci-lavender:#f1edff; }
+.aw-contact-links > summary { min-height:44px; cursor:pointer; font-weight:600; }
+.aw-contact-links .customer-intelligence__card { padding:12px 0; border:0; box-shadow:none; background:transparent; }
+.aw-contact-links select,.aw-contact-links input:not([type=checkbox]) { max-width:100%; width:100%; min-width:0; }
+
+.aw-media-attachment { margin-top:8px; padding:10px 12px; border:1px solid var(--aw-border,#e2e0ea); border-radius:12px; background:var(--bg-secondary,#f7f6fb); font-size:13px; }
+.aw-media-attachment.aw-media-failed { border-color:#e5b8b8; background:#fff6f6; }
+.aw-media-attachment.aw-media-ready { border-color:#c6e2d0; background:#f4fbf6; }
+.aw-media-header { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; }
+.aw-media-badge { font-weight:600; }
+.aw-media-status { color:var(--aw-muted,#595765); }
+.aw-media-failed .aw-media-status { color:#9c2929; font-weight:500; }
+.aw-media-detail, .aw-media-caption { margin:6px 0 0; color:#3d3b46; line-height:1.45; overflow-wrap:anywhere; }
+.aw-media-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.aw-media-actions .aw-link-button { min-height:36px; display:inline-flex; align-items:center; gap:6px; }
+.aw-media-preview { margin-top:10px; }
+.aw-media-preview img { display:block; max-width:min(100%, 360px); max-height:280px; border-radius:10px; border:1px solid var(--aw-border,#e2e0ea); object-fit:contain; background:#fff; }
+.aw-media-preview audio { display:block; width:100%; max-width:360px; }
+.aw-channel-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-block: 16px; color: var(--text-primary); font-size: .875rem; line-height: 1.5; }
+.aw-channel-filter button { min-height: 44px; }

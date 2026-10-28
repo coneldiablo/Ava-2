@@ -1,0 +1,16 @@
+{
+  "name": "ava-native-module-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test *.test.cjs",
+    "start": "node main.cjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "11.10.0",
+    "graphql": "^16.8.1"
+  }
+}

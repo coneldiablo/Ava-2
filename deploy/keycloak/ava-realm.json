@@ -1,0 +1,80 @@
+{
+  "realm": "ava",
+  "displayName": "AVA",
+  "loginTheme": "ava",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
+  "verifyEmail": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "passwordPolicy": "length(12) and notUsername(undefined) and notEmail(undefined)",
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 3600,
+  "accessTokenLifespan": 300,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["ru"],
+  "defaultLocale": "ru",
+  "clients": [
+    {
+      "clientId": "ava-web",
+      "name": "AVA",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${AVA_OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "redirectUris": ["https://wh.meludtech.tech/api/auth/sso/callback", "https://wh.meludtech.tech/api/auth/sso/start"],
+      "webOrigins": ["https://wh.meludtech.tech"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://wh.meludtech.tech",
+        "backchannel.logout.url": "https://wh.meludtech.tech/api/auth/sso/backchannel-logout",
+        "backchannel.logout.session.required": "true"
+      },
+      "defaultClientScopes": ["profile", "email"]
+    },
+    {
+      "clientId": "ava-enrollment-worker",
+      "name": "AVA private enrollment worker",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${AVA_IDENTITY_ADMIN_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [{
+      "name": "declarative-user-profile",
+      "providerId": "declarative-user-profile",
+      "subComponents": {},
+      "config": {
+        "kc.user.profile.config": ["{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"avaUserId\",\"displayName\":\"AVA internal user ID\",\"validations\":{\"length\":{\"min\":36,\"max\":36}},\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}" ]
+      }
+    }]
+  },
+  "users": [
+    {
+      "username": "service-account-ava-enrollment-worker",
+      "enabled": true,
+      "serviceAccountClientId": "ava-enrollment-worker",
+      "clientRoles": {"realm-management": ["manage-users", "view-users", "query-users"]}
+    }
+  ]
+}

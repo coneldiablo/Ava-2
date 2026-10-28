@@ -1,0 +1,8 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY whatsapp_crm/src/services/onyx-knowledge.service.js /app/src/services/onyx-knowledge.service.js
+COPY whatsapp_crm/src/services/sales-brain.service.js /app/src/services/sales-brain.service.js
+COPY whatsapp_crm/src/services/onyx-llm-gateway.service.js /app/src/services/onyx-llm-gateway.service.js
+RUN node --check /app/src/services/onyx-knowledge.service.js && \
+    node --check /app/src/services/sales-brain.service.js && \
+    node --check /app/src/services/onyx-llm-gateway.service.js

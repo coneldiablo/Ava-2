@@ -1,0 +1,4 @@
+# Frontend-only overlay. Preserve the running WhatsApp and handoff implementation.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY whatsapp_crm/frontend/dist/ /app/frontend/dist/

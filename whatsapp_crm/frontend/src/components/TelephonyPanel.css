@@ -1,0 +1,52 @@
+.ava-channel-config.ava-telephony { scroll-margin-top:24px; grid-template-columns:minmax(0,1fr); gap:18px; min-width:0; }
+.ava-telephony-heading,.ava-telephony-number-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.ava-telephony .ava-channels-kicker { color:var(--text-secondary); }
+.ava-telephony-heading h2 { display:flex; gap:10px; align-items:center; }
+.ava-telephony button { min-height:44px; padding:10px 16px; border:1px solid var(--neu-border-strong); border-radius:12px; background:var(--bg-main,#fff); color:var(--text-primary); font-weight:600; max-width:100%; white-space:normal; }
+.ava-telephony button:disabled { opacity:.6; cursor:not-allowed; }
+.ava-telephony button.ava-channel-primary { background:var(--accent); color:#fff; }
+.ava-telephony select { min-height:44px; min-width:0; }
+.ava-telephony p,.ava-telephony strong { overflow-wrap:anywhere; }
+.ava-telephony-heading>div { flex:1; min-width:0; }
+.ava-telephony-heading>button { flex:none; }
+.ava-telephony-offers label { min-height:64px; }
+.ava-telephony .ava-channel-fields { margin-bottom:16px; }
+.ava-telephony select { width:100%; border:1px solid var(--neu-border-strong); padding:10px 12px; border-radius:10px; background:var(--bg-main,#fff); color:inherit; }
+.ava-telephony :is(button,input,select):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.ava-telephony-usage { font-weight:600; }
+.ava-telephony-numbers { display:grid; padding:0; margin:0; list-style:none; gap:16px; }
+.ava-telephony-numbers>li { padding:18px; border:1px solid var(--neu-border-strong); border-radius:14px; }
+.ava-telephony-number-heading strong { font-size:18px; font-variant-numeric:tabular-nums; }
+.ava-telephony-numbers p { margin-top:8px; }
+.ava-telephony-number-heading span { font-size:13px; font-weight:600; }
+.ava-telephony-progress,.ava-telephony-confirm { padding:16px; border:1px solid var(--neu-border-strong); border-radius:12px; background:var(--accent-subtle); }
+.ava-telephony-offers { margin:18px 0; padding:0; border:0; min-width:0; }
+.ava-telephony-offers legend { padding:0 0 10px; font-weight:600; }
+.ava-telephony-offers label { display:flex; gap:14px; align-items:center; padding:14px; margin-bottom:8px; border:1px solid var(--neu-border-strong); border-radius:10px; cursor:pointer; }
+.ava-telephony-offers label.is-selected { border-color:var(--accent); background:var(--accent-subtle); }
+.ava-telephony-offers input { width:20px; height:20px; flex:none; accent-color:var(--accent); }
+.ava-telephony-offers small { display:block; margin-top:5px; }
+.ava-telephony-confirm button { margin-top:12px; max-width:100%; white-space:normal; }
+.ava-telephony-error { color:#a32222; font-weight:500; }
+@media(max-width:540px) { .ava-telephony .ava-channel-fields { grid-template-columns:1fr; } .ava-telephony .ava-channel-actions { flex-direction:column; align-items:stretch; } .ava-telephony-number-heading { gap:6px; } }
+
+.ava-telephony-existing,.ava-telephony-manual { padding:18px; border:1px solid var(--neu-border-strong); border-radius:14px; min-width:0; }
+.ava-telephony h3 { font-weight:700; font-size:17px; }
+.ava-telephony-existing>button,.ava-telephony-existing form { margin-top:16px; }
+.ava-telephony-attestation { display:flex; align-items:flex-start; gap:12px; padding:12px 0; min-height:44px; cursor:pointer; line-height:1.5; }
+.ava-telephony-attestation input { width:20px; height:20px; margin-top:3px; flex:none; accent-color:var(--accent); }
+.ava-telephony-manual a { display:inline-flex; align-items:center; min-height:44px; font-weight:600; text-decoration:underline; }
+.ava-telephony a:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+
+.ava-external-sip { display:grid; gap:16px; margin-block:24px; padding-top:24px; border-top:1px solid var(--channels-line,#e5e4eb); min-width:0; }
+.ava-external-sip h3 { font-weight:700; font-size:1.2rem; }
+.ava-external-sip-form { display:grid; gap:16px; padding:20px; border:1px solid #e5e4eb; border-radius:18px; }
+.ava-external-sip-form fieldset { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; min-width:0; }
+.ava-external-sip-form label { display:grid; gap:8px; min-width:0; font-weight:500; }
+.ava-external-sip-form input,.ava-external-sip-form select { min-height:44px; min-width:0; width:100%; padding:10px 12px; border:1px solid #dedce7; border-radius:10px; background:#fff; color:#24212b; }
+.ava-external-sip :is(button,a,summary) { min-height:44px; }
+.ava-external-sip button { padding:10px 14px; border-radius:10px; }
+.ava-external-sip :is(button,a,input,select):focus-visible,.ava-telephony-diagnostics summary:focus-visible { outline:3px solid #7660d8; outline-offset:3px; }
+.ava-external-sip-form fieldset>p { grid-column:1/-1; }
+.ava-telephony-diagnostics summary { min-height:44px; cursor:pointer; display:flex; align-items:center; font-weight:500; }
+@media(max-width:600px) { .ava-external-sip-form fieldset {grid-template-columns:minmax(0,1fr);} .ava-external-sip-form {padding:14px;} }

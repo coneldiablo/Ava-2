@@ -1,0 +1,7 @@
+ARG AVA_ADMIN_BASE_IMAGE
+FROM ${AVA_ADMIN_BASE_IMAGE}
+
+# Preserve the current Admin runtime image and add only the reviewed bridge.
+COPY admin_ui/backend/main.py /app/main.py
+COPY admin_ui/backend/api/calls.py /app/api/calls.py
+LABEL ava.release.scope="customer-call-history-bridge"

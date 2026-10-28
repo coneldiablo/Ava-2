@@ -1,0 +1,434 @@
+# Asterisk AI Voice Agent - Main Services
+#
+# DEFAULT NETWORK MODE: Host (for telephony/low-latency)
+# - Direct access to host network (127.0.0.1 reaches Asterisk)
+# - No port mapping needed
+# - Best for telephony integrations
+#
+# PERMISSION ALIGNMENT:
+# If your Asterisk uses a different GID than 995 (FreePBX default):
+#   export ASTERISK_GID=$(id -g asterisk)
+#   docker compose build ai_engine
+#   docker compose up -d
+#
+# Prometheus-format metrics are available at `http://<host>:15000/metrics`.
+# Per-call debugging is via Admin UI → Call History.
+
+name: asterisk-ai-voice-agent
+
+services:
+  ai_engine:
+    image: asterisk-ai-voice-agent-ai-engine:latest
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        ASTERISK_GID: ${ASTERISK_GID:-995}
+    container_name: ai_engine
+    # Container runs as appuser (member of asterisk group via Dockerfile)
+    # Files inherit group ownership from setgid directory (set up by preflight.sh)
+    user: "appuser"
+    group_add:
+      - ${ASTERISK_GID:-995}
+    network_mode: host
+    volumes:
+      - ./src:/app/src
+      - ./main.py:/app/main.py
+      - ./config:/app/config
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+      - ./asterisk_media:/mnt/asterisk_media
+      - ./data:/app/data
+      - ./secrets:/app/project/secrets  # Vertex AI service account credentials
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - AVA_IDENTITY_ADMIN_CLIENT_SECRET=
+      - AVA_IDENTITY_BOOTSTRAP_PASSWORD=
+      - AVA_IDENTITY_DB_PASSWORD=
+      - TWENTY_BOOTSTRAP_API_KEY=
+      - TWENTY_SERVER_ADMIN_KEY=
+      - ONYX_BOOTSTRAP_API_KEY=
+      - ONYX_ADMIN_API_KEY=
+      - TWENTY_PROVISIONING_EMAIL=
+      - TWENTY_PROVISIONING_PASSWORD=
+      # Note: TZ is loaded from .env via env_file directive above
+      # Do NOT add TZ here with ${TZ:-default} - it prevents UI env changes from taking effect
+      # Keep ai_engine health/MCP endpoint local-only. Admin UI uses docker-socket fallback
+      # for host-network ai_engine deployments, so this does not need to be public.
+      - HEALTH_BIND_HOST=127.0.0.1
+      # Note: ASTERISK_HOST is loaded from .env via env_file directive above
+      # Do NOT add ASTERISK_HOST here - it prevents UI env changes from taking effect
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+
+  local_ai_server:
+    image: asterisk-ai-voice-agent-local-ai-server:latest
+    pull_policy: build
+    build:
+      context: ./local_ai_server
+      dockerfile: Dockerfile
+      network: host
+      args:
+        - INCLUDE_VOSK=${INCLUDE_VOSK:-true}
+        - INCLUDE_SHERPA=${INCLUDE_SHERPA:-true}
+        - INCLUDE_FASTER_WHISPER=${INCLUDE_FASTER_WHISPER:-false}
+        - INCLUDE_WHISPER_CPP=${INCLUDE_WHISPER_CPP:-false}
+        - INCLUDE_TONE=${INCLUDE_TONE:-false}
+        - INCLUDE_PIPER=${INCLUDE_PIPER:-true}
+        - INCLUDE_KOKORO=${INCLUDE_KOKORO:-true}
+        - INCLUDE_MELOTTS=${INCLUDE_MELOTTS:-false}
+        - INCLUDE_SILERO=${INCLUDE_SILERO:-false}
+        - INCLUDE_LLAMA=${INCLUDE_LLAMA:-true}
+        - INCLUDE_KROKO_EMBEDDED=${INCLUDE_KROKO_EMBEDDED:-false}
+    container_name: local_ai_server
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Note: All LOCAL_* variables are loaded from .env via env_file directive above
+      # Do NOT add them here with ${VAR:-default} - it prevents UI env changes from taking effect
+      # The .env file should contain defaults, or use install.sh to set them
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    # Uncomment below for NVIDIA GPU support:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          python - <<'PY'
+          import asyncio
+          import json
+          import os
+          import websockets
+
+          async def main():
+              port = os.getenv("LOCAL_WS_PORT", "8765")
+              token = (os.getenv("LOCAL_WS_AUTH_TOKEN", "") or "").strip()
+              uri = f"ws://127.0.0.1:{port}"
+
+              ws = await websockets.connect(
+                  uri,
+                  ping_interval=None,
+                  ping_timeout=None,
+                  close_timeout=2,
+                  max_size=None,
+              )
+              try:
+                  if token:
+                      await ws.send(json.dumps({"type": "auth", "auth_token": token}))
+                      raw = await ws.recv()
+                      if isinstance(raw, (bytes, bytearray)):
+                          raise RuntimeError("Unexpected binary auth response")
+                      data = json.loads(raw)
+                      if data.get("type") != "auth_response" or data.get("status") != "ok":
+                          raise RuntimeError(f"Auth rejected: {data}")
+
+                  await ws.send(json.dumps({"type": "status"}))
+                  raw = await ws.recv()
+                  if isinstance(raw, (bytes, bytearray)):
+                      raise RuntimeError("Unexpected binary status response")
+                  data = json.loads(raw)
+                  if data.get("type") != "status_response" or data.get("status") != "ok":
+                      raise RuntimeError(f"Unexpected status response: {data}")
+              finally:
+                  await ws.close()
+
+          asyncio.run(main())
+          PY
+      interval: 60s
+      timeout: 5s
+      # 30 retries × 60s interval = 30 min window after start_period.
+      # Large models may take 5-10 min to load; increase if needed.
+      retries: 30
+      start_period: 120s
+
+  admin_ui:
+    networks:
+      - default
+      - xray_egress
+    image: asterisk-ai-voice-agent-admin-ui:latest
+    pull_policy: build
+    build:
+      context: ./admin_ui
+      dockerfile: Dockerfile
+      network: host
+    container_name: admin_ui
+    ports:
+      - "127.0.0.1:${ADMIN_UI_HOST_PORT:-3003}:3003"
+    # Grant docker socket access to non-root user (appuser runs as UID 1000)
+    # Docker socket is typically owned by group 'docker' (GID varies by distro/host).
+    # Override DOCKER_GID in .env if your system uses a different GID.
+    # Note: admin_ui also auto-detects the socket GID at startup (defense-in-depth).
+    group_add:
+      - ${DOCKER_GID:-999}
+    volumes:
+      - ./:/app/project
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+      # The admin-ui image installs Docker CLI + Compose plugin internally.
+      # Optional fallback (host binaries): use `docker compose -f docker-compose.yml -f docker-compose.admin-ui-host-binaries.yml up -d admin_ui`
+      - /etc/os-release:/host/etc/os-release:ro
+      - ./asterisk_media:/mnt/asterisk_media
+      - ./data:/app/data
+      - ${ASTERISK_RECORDING_PATH:-/var/spool/asterisk/monitor}:/mnt/asterisk_recordings:ro
+    env_file:
+      - .env
+    environment:
+      - PROJECT_ROOT=/app/project
+      - AVA_IDENTITY_ADMIN_CLIENT_SECRET=
+      - AVA_IDENTITY_BOOTSTRAP_PASSWORD=
+      - AVA_IDENTITY_DB_PASSWORD=
+      - TWENTY_BOOTSTRAP_API_KEY=
+      - TWENTY_SERVER_ADMIN_KEY=
+      - ONYX_BOOTSTRAP_API_KEY=
+      - ONYX_ADMIN_API_KEY=
+      - TWENTY_PROVISIONING_EMAIL=
+      - TWENTY_PROVISIONING_PASSWORD=
+      # The root .env uses host-loopback for the host-network AI engine. Admin UI
+      # runs on the Compose network and must address CRM by its service name.
+      - WHATSAPP_CRM_BASE_URL=http://whatsapp_crm:3000
+      - AI_PROVIDER_PROXY_URL=${ADMIN_AI_PROVIDER_PROXY_URL:-${AI_PROVIDER_PROXY_URL:-}}
+      - SALES_BRAIN_BASE_URL=http://whatsapp_crm:3000
+      # HOST_PROJECT_ROOT is the actual host filesystem path for docker compose operations.
+      # This is critical because Docker (via socket) resolves volume mounts on the HOST, not inside this container.
+      - HOST_PROJECT_ROOT=${HOST_PROJECT_ROOT:-/root/Asterisk-AI-Voice-Agent}
+      # Note: UVICORN_HOST, UVICORN_PORT, JWT_SECRET, TZ are loaded from .env via env_file
+      # Do NOT add them here with ${VAR:-default} - it prevents UI env changes from taking effect
+    restart: unless-stopped
+
+  whatsapp_crm:
+    image: asterisk-ai-voice-agent-whatsapp-crm:latest
+    pull_policy: build
+    build:
+      context: ./whatsapp_crm
+      dockerfile: Dockerfile
+      network: host
+    container_name: whatsapp_crm
+    ports:
+      - "127.0.0.1:${WHATSAPP_CRM_HOST_PORT:-3011}:3000"
+    depends_on:
+      whatsapp_crm_redis:
+        condition: service_healthy
+      whatsapp_crm_telegram_proxy:
+        condition: service_started
+      whatsapp_crm_openwa:
+        condition: service_started
+    env_file:
+      - ./whatsapp_crm/.env
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/crm_v2.db
+      - CRM_SERVICE_API_TOKEN=${CRM_SERVICE_API_TOKEN:-}
+      - PMS_CREDENTIALS_MASTER_KEY=${PMS_CREDENTIALS_MASTER_KEY:-}
+      - CHANNEL_CREDENTIALS_MASTER_KEY=${CHANNEL_CREDENTIALS_MASTER_KEY:-}
+      - PMS_ENABLED=${PMS_ENABLED:-true}
+      - PUBLIC_BASE_URL=${PMS_PUBLIC_BASE_URL:-}
+      - BNOVO_API_BASE_URL=${BNOVO_API_BASE_URL:-https://api.pms.bnovo.ru}
+      - TWENTY_CREDENTIALS_MASTER_KEY=${TWENTY_CREDENTIALS_MASTER_KEY:-}
+      # Override legacy env_file values: only the dedicated worker bootstraps modules.
+      - AVA_PROCESS_ROLE=web
+      - AVA_CUSTOMER_ACCESS_ENABLED=${AVA_CUSTOMER_ACCESS_ENABLED:-false}
+      - AVA_ISOLATED_MODULES_ENABLED=${AVA_ISOLATED_MODULES_ENABLED:-false}
+      - AVA_OIDC_ISSUER=${AVA_OIDC_ISSUER:-https://auth.meludtech.tech/realms/ava}
+      - AVA_OIDC_CLIENT_ID=${AVA_OIDC_CLIENT_ID:-ava-web}
+      - AVA_OIDC_CLIENT_SECRET=${AVA_OIDC_CLIENT_SECRET:-}
+      - AVA_IDENTITY_BROKER_TOKEN=${AVA_IDENTITY_BROKER_TOKEN:-}
+      - AVA_IDENTITY_ADMIN_CLIENT_SECRET=
+      - AVA_IDENTITY_BOOTSTRAP_PASSWORD=
+      - ONYX_BOOTSTRAP_API_KEY=
+      - AVA_IDENTITY_DB_PASSWORD=
+      - TWENTY_BOOTSTRAP_API_KEY=
+      - TWENTY_SERVER_ADMIN_KEY=
+      - ONYX_ADMIN_API_KEY=
+      - TWENTY_PROVISIONING_EMAIL=
+      - TWENTY_PROVISIONING_PASSWORD=
+      - ONYX_CREDENTIALS_MASTER_KEY=${ONYX_CREDENTIALS_MASTER_KEY:-}
+      - TWENTY_SYNC_ENABLED=${TWENTY_SYNC_ENABLED:-true}
+      - ONYX_LLM_PROXY_ENABLED=${ONYX_LLM_PROXY_ENABLED:-false}
+      - ONYX_LLM_OSS_REASONING_EFFORT=${ONYX_LLM_OSS_REASONING_EFFORT:-}
+      - CRM_MEMORY_ENABLED=${CRM_MEMORY_ENABLED:-false}
+      - CRM_MEMORY_BUSINESS_IDS=${CRM_MEMORY_BUSINESS_IDS:-}
+      - TWENTY_SYNC_INTERVAL_MS=${TWENTY_SYNC_INTERVAL_MS:-5000}
+      - TWENTY_RATE_LIMIT_PER_MINUTE=${TWENTY_RATE_LIMIT_PER_MINUTE:-90}
+      - WHATSAPP_CRM_PUBLIC_URL=${WHATSAPP_CRM_PUBLIC_URL:-}
+      - AVA_PUBLIC_BASE_URL=${AVA_PUBLIC_BASE_URL:-}
+      - WHATSAPP_CRM_DEFAULT_INSTANCE_ID=${WHATSAPP_CRM_DEFAULT_INSTANCE_ID:-1}
+      - SALES_BRAIN_DEFAULT_INSTANCE_ID=${SALES_BRAIN_DEFAULT_INSTANCE_ID:-1}
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - AVA_ADMIN_API_URL=http://admin_ui:3003
+      - REDIS_HOST=whatsapp_crm_redis
+      - REDIS_PORT=6379
+      - TELEGRAM_PROXY_URL=socks5h://whatsapp_crm_telegram_proxy:8086
+      - OPENWA_URL=http://whatsapp_crm_openwa:2785
+      - OPENWA_API_KEY=${OPENWA_API_KEY:-}
+    volumes:
+      - ./data/whatsapp_crm:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:3000/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  provisioning_worker:
+    image: asterisk-ai-voice-agent-whatsapp-crm:latest
+    command: ["node", "provisioning-worker.js"]
+    depends_on:
+      whatsapp_crm:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - AVA_PROCESS_ROLE=provisioning-worker
+      - AVA_ISOLATED_MODULES_ENABLED=${AVA_ISOLATED_MODULES_ENABLED:-false}
+      - AVA_OIDC_ISSUER=${AVA_OIDC_ISSUER:-https://auth.meludtech.tech/realms/ava}
+      - AVA_IDENTITY_ADMIN_CLIENT_ID=${AVA_IDENTITY_ADMIN_CLIENT_ID:-ava-enrollment-worker}
+      - AVA_IDENTITY_ADMIN_CLIENT_SECRET=${AVA_IDENTITY_ADMIN_CLIENT_SECRET:-}
+      - AVA_IDENTITY_BROKER_TOKEN=${AVA_IDENTITY_BROKER_TOKEN:-}
+      - AVA_WORKSPACE_ROUTE_SOCKET=/run/ava-provisioning/route.sock
+      - DB_PATH=/app/data/crm_v2.db
+      - ONYX_BASE_URL=${ONYX_BASE_URL:-}
+      - ONYX_BOOTSTRAP_API_KEY=${ONYX_BOOTSTRAP_API_KEY:-}
+      - ONYX_CREDENTIALS_MASTER_KEY=${ONYX_CREDENTIALS_MASTER_KEY:-}
+      - TWENTY_CREDENTIALS_MASTER_KEY=${TWENTY_CREDENTIALS_MASTER_KEY:-}
+      - CHANNEL_CREDENTIALS_MASTER_KEY=${CHANNEL_CREDENTIALS_MASTER_KEY:-}
+      - TWENTY_PROVISIONING_BASE_URL=${TWENTY_PROVISIONING_BASE_URL:-}
+      - TWENTY_PROVISIONING_EMAIL=${TWENTY_PROVISIONING_EMAIL:-}
+      - TWENTY_PROVISIONING_PASSWORD=${TWENTY_PROVISIONING_PASSWORD:-}
+      - TWENTY_PROVISIONING_ROLE_LABEL=${TWENTY_PROVISIONING_ROLE_LABEL:-AVA Integration}
+      - TWENTY_ENTERPRISE_KEY=${TWENTY_ENTERPRISE_KEY:-}
+      - AVA_PUBLIC_BASE_URL=${AVA_PUBLIC_BASE_URL:-}
+      - WHATSAPP_CRM_PUBLIC_URL=${WHATSAPP_CRM_PUBLIC_URL:-}
+    volumes:
+      - ./data/whatsapp_crm:/app/data
+      - ./deploy/twenty:/deploy/twenty:ro
+      - /run/ava-provisioning:/run/ava-provisioning:ro
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  whatsapp_crm_openwa:
+    # OpenWA does not publish a public GHCR image for this release. Build the
+    # verified upstream tag from its immutable commit instead of relying on a
+    # registry tag that may be missing or mutable.
+    image: asterisk-ai-voice-agent-openwa:${OPENWA_IMAGE_TAG:-0.23.4}
+    pull_policy: build
+    build:
+      context: "${OPENWA_BUILD_CONTEXT:-https://github.com/rmyndharis/OpenWA.git?tag=${OPENWA_GIT_TAG:-v0.23.4}&checksum=1bfebfe57232bcb20ddd0975560d3f4bc994fb36}"
+      dockerfile: Dockerfile
+    container_name: whatsapp_crm_openwa
+    stop_grace_period: 45s
+    ports:
+      - "127.0.0.1:${OPENWA_HOST_PORT:-2785}:2785"
+    environment:
+      - NODE_ENV=production
+      - HOME=/tmp
+      - XDG_CONFIG_HOME=/tmp/.config
+      - XDG_CACHE_HOME=/tmp/.cache
+      - PORT=2785
+      - API_MASTER_KEY=${OPENWA_API_KEY:?set OPENWA_API_KEY}
+      - AUTO_START_SESSIONS=true
+      - STATUS_SEED_ON_READY=false
+      - BAILEYS_MARK_ONLINE_ON_CONNECT=false
+      # Let in-flight webhook deliveries finish within their normal timeout
+      # during an orderly container stop.
+      - WEBHOOK_SHUTDOWN_DRAIN_MS=12000
+      - NODE_ID=ava-openwa-primary
+      - SERVE_DASHBOARD=false
+      - ENABLE_SWAGGER=false
+      - CSP_UPGRADE_INSECURE_REQUESTS=false
+      - DATABASE_TYPE=sqlite
+      - SESSION_DATA_PATH=/app/data/sessions
+      - PUPPETEER_EXECUTABLE_PATH=/usr/local/bin/puppeteer-chrome
+      - WWEBJS_WEB_VERSION=off
+      - LOG_LEVEL=${OPENWA_LOG_LEVEL:-info}
+    volumes:
+      - whatsapp_crm_openwa_data:/app/data
+    networks:
+      - default
+      - xray_egress
+    read_only: true
+    tmpfs:
+      - /tmp
+      # whatsapp-web.js persists first-party HTML after QR authentication.
+      # Keep the image read-only; only this disposable cache is writable by
+      # the pinned OpenWA image's unprivileged runtime user (uid/gid 997).
+      - /app/.wwebjs_cache:uid=997,gid=997,mode=0700,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    pids_limit: ${OPENWA_PIDS_LIMIT:-2048}
+    mem_limit: ${OPENWA_MEM_LIMIT:-2g}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:2785/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    restart: unless-stopped
+
+  whatsapp_crm_redis:
+    image: ${AVA_REDIS_IMAGE:-redis:7-alpine}
+    container_name: whatsapp_crm_redis
+    volumes:
+      - whatsapp_crm_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  whatsapp_crm_telegram_proxy:
+    image: asterisk-ai-voice-agent-whatsapp-crm-telegram-proxy:latest
+    pull_policy: build
+    build:
+      context: ./whatsapp_crm
+      dockerfile: Dockerfile.telegram-proxy
+    container_name: whatsapp_crm_telegram_proxy
+    volumes:
+      - whatsapp_crm_telegram_proxy_data:/data
+    restart: unless-stopped
+
+volumes:
+  whatsapp_crm_redis_data:
+  whatsapp_crm_telegram_proxy_data:
+  whatsapp_crm_openwa_data:
+
+networks:
+  xray_egress:
+    external: true
+    name: xray-client_default

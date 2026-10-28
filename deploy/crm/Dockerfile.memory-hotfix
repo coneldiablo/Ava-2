@@ -1,0 +1,16 @@
+# Exact retained CRM base image; preserve installed dependencies and frontend.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY whatsapp_crm/src/app.js /app/src/app.js
+COPY whatsapp_crm/src/routes/ml.routes.js /app/src/routes/ml.routes.js
+COPY whatsapp_crm/src/services/database.service.js /app/src/services/database.service.js
+COPY whatsapp_crm/src/services/ai.service.js /app/src/services/ai.service.js
+COPY whatsapp_crm/src/services/sales-brain.service.js /app/src/services/sales-brain.service.js
+COPY whatsapp_crm/src/services/whatsapp.service.js /app/src/services/whatsapp.service.js
+COPY whatsapp_crm/src/services/crm-memory.service.js /app/src/services/crm-memory.service.js
+COPY whatsapp_crm/src/services/crm-memory-store.service.js /app/src/services/crm-memory-store.service.js
+COPY whatsapp_crm/src/services/crm-memory-policy.json /app/src/services/crm-memory-policy.json
+RUN node --check /app/src/app.js && node --check /app/src/routes/ml.routes.js && \
+    node --check /app/src/services/database.service.js && node --check /app/src/services/ai.service.js && \
+    node --check /app/src/services/sales-brain.service.js && node --check /app/src/services/whatsapp.service.js && \
+    node --check /app/src/services/crm-memory.service.js && node --check /app/src/services/crm-memory-store.service.js

@@ -1,0 +1,66 @@
+name: ava-identity
+services:
+  database:
+    image: postgres:17.11-alpine3.24@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    environment:
+      POSTGRES_DB: ava_identity
+      POSTGRES_USER: ava_identity
+      POSTGRES_PASSWORD: ${AVA_IDENTITY_DB_PASSWORD:?Set private identity database password}
+    volumes:
+      - identity_database:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ava_identity -d ava_identity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    restart: unless-stopped
+  keycloak:
+    image: ava-keycloak:26.7.3
+    build: .
+    command: [start, --optimized, --import-realm]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://database:5432/ava_identity
+      KC_DB_USERNAME: ava_identity
+      KC_DB_PASSWORD: ${AVA_IDENTITY_DB_PASSWORD:?Set private identity database password}
+      KC_HOSTNAME: https://auth.meludtech.tech
+      KC_HOSTNAME_STRICT: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HTTP_ACCESS_LOG_ENABLED: "false"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${AVA_IDENTITY_BOOTSTRAP_USERNAME:?Set separate emergency administrator}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${AVA_IDENTITY_BOOTSTRAP_PASSWORD:?Set private emergency password}
+      AVA_OIDC_CLIENT_SECRET: ${AVA_OIDC_CLIENT_SECRET:?Set AVA client secret}
+      AVA_IDENTITY_ADMIN_CLIENT_SECRET: ${AVA_IDENTITY_ADMIN_CLIENT_SECRET:?Set worker client secret}
+    # HTTPS terminates at the local nginx. Never publish these on 0.0.0.0.
+    ports:
+      - "127.0.0.1:8084:8080"
+    volumes:
+      - ./ava-realm.json:/opt/keycloak/data/import/ava-realm.json:ro
+    networks:
+      database:
+      outbound:
+      worker:
+        aliases: [ava-identity-provider]
+    depends_on:
+      database:
+        condition: service_healthy
+    mem_limit: 2g
+    cpus: 2
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    stop_grace_period: 30s
+volumes:
+  identity_database:
+networks:
+  database:
+    internal: true
+  outbound:
+  worker:
+    name: ava-identity-worker
+    internal: true

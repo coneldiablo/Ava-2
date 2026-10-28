@@ -1,0 +1,7 @@
+# Narrow additive pilot image. The operator checks the approved base image ID.
+ARG AVA_CRM_IMAGE
+FROM ${AVA_CRM_IMAGE}
+COPY whatsapp_crm/src/services/identity/module-access-store.js /app/src/services/identity/module-access-store.js
+COPY whatsapp_crm/src/services/identity/module-access-broker.js /app/src/services/identity/module-access-broker.js
+COPY whatsapp_crm/src/services/identity/onyx-runtime-access.js /app/src/services/identity/onyx-runtime-access.js
+COPY whatsapp_crm/src/services/provisioning/deployment-store.js /app/src/services/provisioning/deployment-store.js

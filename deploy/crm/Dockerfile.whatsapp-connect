@@ -1,0 +1,12 @@
+# Preserve the verified runtime/dependencies; ship the rebuilt existing UI.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY whatsapp_crm/src/app.js /app/src/app.js
+COPY whatsapp_crm/src/routes/api.routes.js /app/src/routes/api.routes.js
+COPY whatsapp_crm/src/services/auth.service.js /app/src/services/auth.service.js
+COPY whatsapp_crm/src/services/openwa.service.js /app/src/services/openwa.service.js
+COPY whatsapp_crm/src/services/whatsapp-connection.service.js /app/src/services/whatsapp-connection.service.js
+COPY whatsapp_crm/frontend/dist/ /app/frontend/dist/
+RUN node --check /app/src/app.js && node --check /app/src/routes/api.routes.js && \
+    node --check /app/src/services/whatsapp-connection.service.js && \
+    node --check /app/src/services/openwa.service.js

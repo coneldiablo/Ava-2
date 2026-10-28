@@ -1,0 +1,22 @@
+.customer-name { min-width:0; max-width:100%; }
+.customer-name__title { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; min-width:0; }
+.customer-name__title > :is(h1,h2) { min-width:0; max-width:100%; overflow-wrap:anywhere; }
+.aw-client-heading .customer-name h2 { white-space:normal; overflow:visible; }
+.customer-name button { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:36px; font-size:13px; font-weight:500; border:1px solid var(--border-color,#dedbe7); border-radius:8px; padding:6px 10px; color:var(--text-primary,#171717); background:var(--bg-primary,#fff); cursor:pointer; }
+.customer-name button.customer-name__edit { border-color:transparent; color:var(--text-secondary,#595765); padding-inline:0; }
+.customer-name__form { display:grid; gap:8px; padding:12px 0; max-width:400px; }
+.customer-name__form label { font-size:13px; font-weight:600; }
+.customer-name__form input { box-sizing:border-box; width:100%; min-width:0; padding:10px 12px; border:1px solid var(--border-color,#dedbe7); border-radius:8px; font:inherit; font-size:16px; color:var(--text-primary,#171717); background:var(--bg-primary,#fff); }
+.customer-name__actions { display:flex; flex-wrap:wrap; gap:8px; }
+.customer-name__actions > button:first-child { color:#fff; background:var(--accent-primary,#6750c7); border-color:var(--accent-primary,#6750c7); }
+.customer-name__form p { margin:0; font-size:13px; line-height:1.5; color:#9c2929; overflow-wrap:anywhere; }
+.customer-name__notice { display:block; font-size:12px; line-height:1.5; }
+.customer-name__notice:empty { display:none; }
+.customer-name :is(button,input):focus-visible { outline:2px solid var(--ai,#6e56ff); outline-offset:3px; }
+.customer-name button:disabled { opacity:.65; cursor:wait; }
+@media (max-width:700px) {
+ .customer-name button { min-height:44px; }
+ .aw-client-header:has(.customer-name__form) { flex-wrap:wrap; }
+ .aw-client-header:has(.customer-name__form) .aw-client-heading { order:3; flex:1 1 100%; }
+ .aw-client-header:has(.customer-name__form) .aw-context-toggle { margin-left:auto; }
+}

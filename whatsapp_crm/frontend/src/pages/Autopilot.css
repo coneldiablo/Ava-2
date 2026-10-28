@@ -1,0 +1,4 @@
+.ap-explainer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 22px; margin: 18px 0; border: 1px solid var(--aw-border, #dedde5); border-radius: 18px; background: var(--aw-surface, #fff); }
+.ap-explainer h2 { font-size: 16px; line-height: 1.4; margin: 0 0 8px; }
+.ap-explainer p { color: var(--aw-muted, #595864); font-size: 14px; line-height: 1.6; margin: 0; }
+@media (max-width: 760px) { .ap-explainer { grid-template-columns: 1fr; gap: 18px; padding: 18px; } }

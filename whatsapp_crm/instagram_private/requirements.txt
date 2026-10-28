@@ -1,0 +1,4 @@
+# Optional, isolated dependency from the upstream GitHub release tag 3.0.21.
+# Pin the resolved commit so a moved tag cannot silently change the adapter.
+# Includes the upstream TLS 1.3 fix for fresh CAA login HTTP 429 (#2852/#2862).
+instagrapi @ git+https://github.com/subzeroid/instagrapi.git@3f0b4369753fc69d98cd2bc853146cc85d3b1635

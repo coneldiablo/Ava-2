@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  input, textarea, select, button {
+    @apply outline-none focus:outline-none;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-[#111111]/10 bg-white px-3 py-2 text-sm font-semibold text-[#111111] transition focus:border-[#111111];
+  }
+}

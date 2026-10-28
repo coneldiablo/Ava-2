@@ -1,0 +1,58 @@
+.business-gpt { color: #232033; }
+.business-gpt__header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.2rem; }
+.business-gpt__mark { display: grid; place-items: center; width: 3rem; height: 3rem; flex: none; border-radius: 1rem; color: #7055ce; background: #eee9ff; }
+.business-gpt__eyebrow { margin: 0 0 .3rem; color: #7864bd; font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+.business-gpt__header h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); }
+.business-gpt__header p:last-child { margin: .4rem 0 0; color: #6b6678; }
+.business-gpt__layout { display: grid; grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr); gap: 1rem; min-height: min(68vh, 710px); }
+.business-gpt__history, .business-gpt__conversation { min-width: 0; border: 1px solid #e5e1ed; border-radius: 1.25rem; background: #fff; box-shadow: 0 10px 32px rgba(47, 34, 90, .04); }
+.business-gpt__history { padding: .85rem; }
+.business-gpt__new { display: flex; justify-content: center; align-items: center; gap: .5rem; width: 100%; min-height: 44px; border: 0; border-radius: .8rem; color: white; background: var(--ai); font-weight: 650; cursor: pointer; }
+.business-gpt__new:disabled { opacity: .55; cursor: not-allowed; }
+.business-gpt__history h2 { margin: 1.4rem .5rem .6rem; color: #736d82; font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
+.business-gpt__history ul, .business-gpt__sources ul { margin: 0; padding: 0; list-style: none; }
+.business-gpt__history li + li { margin-top: .25rem; }
+.business-gpt__history li button { display: block; width: 100%; border: 0; border-radius: .7rem; padding: .7rem; color: #3b344d; background: transparent; text-align: left; cursor: pointer; }
+.business-gpt__history li button:hover, .business-gpt__history li button.is-selected { background: #f1edfc; }
+.business-gpt__history li span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.business-gpt__history time { color: #807b8d; font-size: .72rem; }
+.business-gpt__muted { color: #777181; }
+.business-gpt__conversation { display: flex; flex-direction: column; overflow: hidden; }
+.business-gpt__messages { min-height: 25rem; max-height: min(58vh, 610px); flex: 1; overflow-y: auto; padding: clamp(1rem, 3vw, 1.6rem); }
+.business-gpt__welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 20rem; color: #755dc4; text-align: center; }
+.business-gpt__welcome h2 { margin: 1rem 0 .3rem; color: #28233b; font-size: 1.25rem; }
+.business-gpt__welcome p { max-width: 30rem; margin: 0; color: #777181; line-height: 1.5; }
+.business-gpt__turn + .business-gpt__turn { margin-top: 1.3rem; }
+.business-gpt__question { width: fit-content; max-width: 85%; margin: 0 0 .75rem auto; border-radius: 1rem 1rem .25rem 1rem; padding: .8rem 1rem; color: white; background: var(--ai); white-space: pre-wrap; overflow-wrap: anywhere; }
+.business-gpt__answer { max-width: 90%; border: 1px solid #e9e3f7; border-radius: 1rem 1rem 1rem .25rem; padding: 1rem; background: #faf8ff; }
+.business-gpt__answer-label { display: inline-flex; align-items: center; gap: .35rem; color: #6d55ba; font-size: .77rem; font-weight: 750; }
+.business-gpt__answer p { margin: .65rem 0; line-height: 1.58; white-space: pre-wrap; overflow-wrap: anywhere; }
+.business-gpt__answer small { color: #817b8c; }
+.business-gpt__sources { border-top: 1px solid #e9e3f7; padding: .65rem 0; font-size: .75rem; }
+.business-gpt__sources strong { color: #5f5970; }
+.business-gpt__sources ul { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .45rem; }
+.business-gpt__sources li { display: inline-flex; align-items: center; gap: .3rem; border: 1px solid #e4dcf7; border-radius: 100px; padding: .3rem .55rem; color: #5e4b9a; background: white; overflow-wrap: anywhere; }
+.business-gpt__pending { display: flex; align-items: center; gap: .5rem; color: #6956a9; }
+.business-gpt__spin { animation: business-gpt-spin 1s linear infinite; }
+@keyframes business-gpt-spin { to { transform: rotate(360deg); } }
+.business-gpt__composer { border-top: 1px solid #e9e5ee; padding: 1rem; }
+.business-gpt__composer form { display: flex; gap: .65rem; align-items: flex-end; }
+.business-gpt__composer textarea { min-width: 0; flex: 1; resize: vertical; border: 1px solid #dcd5eb; border-radius: .8rem; padding: .75rem; color: #28233b; background: #fff; font: inherit; }
+.business-gpt__composer button { display: grid; place-items: center; width: 46px; height: 46px; flex: none; border: 0; border-radius: .8rem; color: white; background: var(--ai); cursor: pointer; }
+.business-gpt__composer button:disabled { opacity: .5; cursor: not-allowed; }
+.business-gpt__composer > p:last-child { margin: .5rem 0 0; color: #817b8c; font-size: .72rem; }
+.business-gpt__error { margin: 0 0 .6rem; color: #a32631; font-size: .86rem; }
+.business-gpt button:focus-visible, .business-gpt textarea:focus-visible { outline: 3px solid var(--focus-ring, #4033c9); outline-offset: 2px; }
+@media (max-width: 720px) { .business-gpt__layout { grid-template-columns: 1fr; } .business-gpt__history { max-height: 12rem; overflow-y: auto; } .business-gpt__history ul { display: flex; gap: .3rem; overflow-x: auto; } .business-gpt__history li { min-width: 10rem; } .business-gpt__messages { min-height: 22rem; max-height: 55vh; } }
+@media (prefers-reduced-motion: reduce) { .business-gpt__spin { animation: none; } }
+
+.business-gpt__composer .business-gpt__recovery { display: inline-flex; width: auto; min-height: 44px; height: auto; margin: 0 .5rem .65rem 0; padding: .6rem .85rem; gap: .4rem; color: #51477b; background: #f1edfc; font: inherit; }
+.business-gpt__sources summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; color: #5f5970; font-weight: 600; }
+.business-gpt__sources summary:focus-visible { outline: 3px solid var(--focus-ring, #4033c9); outline-offset: 2px; }
+
+.business-gpt__sources li span { min-width: 0; }
+.business-gpt__sources li small { display: block; margin-top: .2rem; color: #6b6678; font-size: .72rem; }
+.business-gpt__limitations { margin: .75rem 0; padding: .75rem .85rem; border-radius: .75rem; color: #51477b; background: #f1edfc; font-size: .86rem; line-height: 1.5; }
+.business-gpt__limitations ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+
+.business-gpt__composer textarea { line-height: 1.5; min-block-size: 96px; }

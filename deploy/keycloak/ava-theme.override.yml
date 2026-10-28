@@ -1,0 +1,4 @@
+services:
+  keycloak:
+    volumes:
+      - ./themes/ava:/opt/keycloak/themes/ava:ro

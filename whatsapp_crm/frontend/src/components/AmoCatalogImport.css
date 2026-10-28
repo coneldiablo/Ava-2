@@ -1,0 +1,7 @@
+.amo-catalog fieldset { display:grid; gap:14px; border:0; min-width:0; padding:0; }
+.amo-catalog legend { font-weight:600; margin-bottom:12px; }
+.amo-catalog input[type=number] { min-width:0; width:100%; min-height:44px; padding:10px; border:1px solid var(--neu-border-strong); border-radius:12px; background:white; }
+.amo-catalog button { min-height:44px; white-space:normal; letter-spacing:normal; text-transform:none; padding:10px 16px; }
+.amo-catalog section { display:grid; gap:14px; min-width:0; }
+.amo-catalog .catalog-import-table { max-height:400px; }
+.amo-catalog summary { cursor:pointer; padding:10px 0; }

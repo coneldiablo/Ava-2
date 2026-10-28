@@ -1,0 +1,31 @@
+# Each deployment gets its OWN project, private native network and state volume.
+# Only this gateway may be connected to the platform ingress. Native applications
+# and session listeners must have no published ports or ingress network access.
+services:
+  gateway:
+    image: ${AVA_GATEWAY_IMAGE:?Reviewed gateway image pinned by digest required}
+    volumes:
+      - ${AVA_GATEWAY_CONFIG:?Absolute gateway config path required}:/run/ava/gateway.json:ro
+      - ${AVA_GATEWAY_SECRETS:?Absolute secrets directory required}:/run/ava/secrets:ro
+      - gateway_state:/var/lib/ava-gateway
+    networks: [native, module_access, ingress]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/tmp:rw,nosuid,nodev,noexec,size=8m]
+    mem_limit: 192m
+    cpus: 0.5
+    pids_limit: 64
+    restart: unless-stopped
+    stop_grace_period: 15s
+volumes:
+  gateway_state:
+networks:
+  native:
+    internal: true
+  module_access:
+    external: true
+    name: ava-module-access
+  ingress:
+    external: true
+    name: ava-module-ingress

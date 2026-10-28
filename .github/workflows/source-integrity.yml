@@ -1,0 +1,29 @@
+name: Captured source integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  source-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify captured runtime source hashes
+        run: python deploy/production-snapshot-20261028/source_snapshot.py verify
+      - name: Materialize each captured service
+        run: python deploy/production-snapshot-20261028/source_snapshot.py materialize --output "$RUNNER_TEMP/ava-runtime-source"
+      - name: Python syntax
+        run: python -m compileall -q src admin_ui/backend main.py deploy/production-snapshot-20261028/source_snapshot.py
+      - name: CRM JavaScript syntax
+        run: find whatsapp_crm/src -name '*.js' -print0 | xargs -0 -n1 node --check

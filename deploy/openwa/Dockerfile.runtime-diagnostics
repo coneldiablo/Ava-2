@@ -1,0 +1,7 @@
+ARG OPENWA_BASE=ava-openwa:before-runtime-fix-20260907
+FROM ${OPENWA_BASE}
+USER root
+COPY deploy/openwa/patch-runtime-diagnostics.cjs /tmp/ava-patch-runtime.cjs
+RUN node /tmp/ava-patch-runtime.cjs /app/node_modules/whatsapp-web.js/src/Client.js \
+    && node --check /app/node_modules/whatsapp-web.js/src/Client.js \
+    && rm /tmp/ava-patch-runtime.cjs

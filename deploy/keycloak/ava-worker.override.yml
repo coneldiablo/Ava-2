@@ -1,0 +1,11 @@
+# Apply alongside the repository root docker-compose.yml, only after identity
+# bootstrap and review. Ordinary web containers are NOT on this network.
+services:
+  provisioning_worker:
+    environment:
+      AVA_IDENTITY_ADMIN_ORIGIN: http://ava-identity-provider:8080
+    networks: [default, identity_worker]
+networks:
+  identity_worker:
+    name: ava-identity-worker
+    external: true

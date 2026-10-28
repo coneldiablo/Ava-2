@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.secret
+
+# Local databases and runtime state
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs and caches
+dist/
+build/
+coverage/
+.cache/
+.vite/
+.turbo/
+frontend/dist/
+frontend/.vite/
+
+# Local browser/test artifacts
+.playwright-mcp/
+playwright-report/
+test-results/
+blob-report/
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# OCR/model binaries and generated heavy assets
+*.traineddata
+
+# Local generated exports/uploads
+uploads/
+exports/
+backups/
+tmp/
+temp/
+
+# Keep source docs, API specs, tests, and package lockfiles tracked.

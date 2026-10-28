@@ -1,0 +1,22 @@
+[Unit]
+Description=AVA restricted workspace HTTPS provisioning
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+UMask=0077
+RuntimeDirectory=ava-provisioning
+RuntimeDirectoryMode=0750
+ExecStart=/usr/bin/python3 /opt/ava-ops/workspace_route_helper.py --database /root/ava-current/data/whatsapp_crm/crm_v2.db
+Restart=on-failure
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/etc/nginx/ava-workspaces /etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt /var/log/nginx /var/www/acme /run/ava-provisioning
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

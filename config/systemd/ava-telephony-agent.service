@@ -1,0 +1,27 @@
+[Unit]
+Description=AVA managed telephony configuration and DID resolver
+After=network.target asterisk.service
+Requires=asterisk.service
+
+[Service]
+Type=simple
+User=asterisk
+Group=asterisk
+EnvironmentFile=/etc/ava/telephony-agent.env
+ExecStart=/usr/bin/python3 /opt/ava/scripts/telephony/agent.py
+RuntimeDirectory=ava-telephony
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=yes
+ExecStopPost=/usr/bin/rm -f /run/ava-telephony/agent.sock
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/etc/asterisk/ava-managed /run/ava-telephony
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

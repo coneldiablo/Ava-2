@@ -1,0 +1,10 @@
+.knowledge-workspace__label { display: block; color: var(--text, #343044); font-size: .88rem; font-weight: 600; }
+.knowledge-preview__form { flex-wrap: wrap; }
+.knowledge-preview__form .knowledge-workspace__label { flex-basis: 100%; }
+.knowledge-workspace__review { border: 1px solid var(--border, #e5e1ed); border-radius: 1rem; background: var(--surface, #fff); overflow: hidden; }
+.knowledge-workspace__review > summary { min-height: 44px; padding: 1.1rem 1.3rem; cursor: pointer; font-weight: 650; color: var(--text, #343044); }
+.knowledge-workspace__review > summary small { display: block; margin-top: .25rem; color: var(--muted, #6b6678); font-size: .85rem; font-weight: 400; }
+.knowledge-workspace__review > summary:focus-visible, .knowledge-preview__sources > summary:focus-visible { outline: 3px solid var(--ai, #aa96e9); outline-offset: -3px; }
+.knowledge-workspace__review .knowledge-review { border: 0; border-top: 1px solid var(--border, #e5e1ed); border-radius: 0; box-shadow: none; }
+.knowledge-preview__sources > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: #51477b; font-size: .88rem; font-weight: 600; }
+.knowledge-preview__sources[open] > summary { margin-bottom: .5rem; }

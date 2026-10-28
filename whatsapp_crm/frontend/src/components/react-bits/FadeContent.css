@@ -1,0 +1,6 @@
+@media (prefers-reduced-motion: reduce) {
+    .react-bits-fade-content {
+        opacity: 1 !important;
+        transition: none !important;
+    }
+}

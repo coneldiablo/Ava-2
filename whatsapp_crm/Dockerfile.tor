@@ -1,0 +1,22 @@
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    tor \
+    && rm -rf /var/lib/apt/lists/* \
+    && printf '%s\n' \
+        'SocksPort 0.0.0.0:9050' \
+        'DataDirectory /var/lib/tor' \
+        'Log notice stdout' \
+        > /etc/tor/torrc \
+    && chown -R debian-tor:debian-tor /var/lib/tor
+
+USER debian-tor
+
+EXPOSE 9050
+
+HEALTHCHECK --interval=10s --timeout=15s --start-period=30s --retries=12 \
+    CMD curl --fail --silent --show-error --socks5-hostname 127.0.0.1:9050 https://api.telegram.org/ > /dev/null || exit 1
+
+CMD ["tor", "-f", "/etc/tor/torrc"]

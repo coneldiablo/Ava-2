@@ -1,0 +1,4 @@
+# Frontend-only overlay of the verified runtime: no provider/auth/database changes.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY admin_ui/frontend/web/build/client/ /app/static/

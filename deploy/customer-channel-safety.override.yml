@@ -1,0 +1,6 @@
+# Append after the active production compose files. Only the customer CRM
+# image changes; Admin, telephony and other services retain their live images.
+services:
+  whatsapp_crm:
+    image: ava-customer-crm:${AVA_CUSTOMER_CHANNELS_SHA:?Set AVA_CUSTOMER_CHANNELS_SHA to the reviewed commit}
+    pull_policy: never

@@ -1,0 +1,191 @@
+# Example ai-agent.yaml (General)
+# Copy this to config/ai-agent.yaml and customize for your environment.
+#
+# For validated starting points, see the golden baseline configs:
+#  - config/ai-agent.golden-openai.yaml
+#  - config/ai-agent.golden-deepgram.yaml
+#  - config/ai-agent.golden-google-live.yaml
+#  - config/ai-agent.golden-elevenlabs.yaml
+#  - config/ai-agent.golden-local-hybrid.yaml
+#  - config/ai-agent.golden-telnyx.yaml
+#
+# Secrets come from .env (see .env.example). YAML values may reference env using ${NAME}.
+
+# Default to the privacy-focused pipeline on clean installs (local STT/TTS + cloud LLM).
+# Override per-call via dialplan `AI_PROVIDER` when needed.
+default_provider: "local_hybrid"
+
+# Example pipelines. Pick one and set active_pipeline accordingly.
+pipelines:
+  # Cloud OpenAI across STT/LLM/TTS
+  cloud_openai:
+    stt: openai_stt
+    llm: openai_llm
+    tts: openai_tts
+    options:
+      stt:
+        base_url: "wss://api.openai.com/v1/realtime"
+      llm:
+        base_url: "https://api.openai.com/v1"
+        model: "gpt-realtime"
+      tts:
+        base_url: "https://api.openai.com/v1/audio/speech"
+        format:
+          encoding: linear16
+          sample_rate: 24000
+  # Local provider for all components
+  local_only:
+    stt: local_stt
+    llm: local_llm
+    tts: local_tts
+    options:
+      stt:
+        chunk_ms: 320
+        streaming: true
+        stream_format: "pcm16_16k"
+      llm:
+        temperature: 0.4
+        max_tokens: 64
+      tts:
+        format:
+          encoding: ulaw
+          sample_rate: 8000
+  # Local STT + OpenAI LLM + ElevenLabs TTS (premium voice quality)
+  hybrid_elevenlabs:
+    stt: local_stt
+    llm: openai_llm
+    tts: elevenlabs_tts
+    options:
+      stt:
+        chunk_ms: 320
+        streaming: true
+        stream_format: "pcm16_16k"
+      llm:
+        base_url: "https://api.openai.com/v1"
+        model: "gpt-4o-mini"
+        temperature: 0.7
+        max_tokens: 150
+      tts:
+        format:
+          encoding: mulaw
+          sample_rate: 8000
+  # Local STT + OpenAI LLM + Deepgram TTS
+  hybrid_deepgram_openai:
+    stt: local_stt
+    llm: openai_llm
+    tts: deepgram_tts
+    options:
+      llm:
+        base_url: "https://api.openai.com/v1"
+        model: "gpt-4o-mini"
+      tts:
+        base_url: "https://api.deepgram.com"
+        voice: "aura-asteria-en"
+        format:
+          encoding: mulaw
+          sample_rate: 8000
+
+# Select an active pipeline when using the pipeline path
+active_pipeline: cloud_openai
+
+# Transport modes
+# NOTE: For remote Asterisk deployments (AI engine on different machine than Asterisk):
+#   - AudioSocket is RECOMMENDED: works without shared storage
+#   - ExternalMedia requires shared storage (NFS mount) for file-based playback
+audio_transport: "audiosocket"   # audiosocket | externalmedia
+downstream_mode: "stream"        # stream | file
+
+# AudioSocket listener (when audio_transport=audiosocket)
+audiosocket:
+  host: "127.0.0.1"         # Bind host: IP the server listens on (use 0.0.0.0 for all interfaces)
+  # advertise_host: ""      # Advertise host: IP Asterisk connects to (optional, defaults to host)
+                            # Set this when AI engine is behind NAT/VPN:
+                            #   - VPN: your VPN IP (e.g., 10.8.0.5)
+                            #   - Port forward: your public IP or DDNS hostname
+                            #   - Same LAN: your LAN IP (e.g., 192.168.1.50)
+  port: 8090
+  format: "ulaw"            # ulaw (8 kHz) | slin (8 kHz PCM16) | slin16 (16 kHz PCM16)
+
+# ExternalMedia RTP (when audio_transport=externalmedia)
+external_media:
+  rtp_host: "127.0.0.1"     # Bind host: IP the RTP server listens on (use 0.0.0.0 for all interfaces)
+  # advertise_host: ""      # Advertise host: IP Asterisk sends RTP to (optional, defaults to rtp_host)
+                            # Set this when AI engine is behind NAT/VPN (same options as AudioSocket above)
+  rtp_port: 18080
+  port_range: "18080:18099"
+  codec: "ulaw"
+  direction: "both"
+
+# Optional VAD/barge-in and streaming tuning
+barge_in:
+  enabled: false
+  initial_protection_ms: 400    # Drop inbound during agent intro; 200–600 ms. Higher = less echo, more delay.
+  min_ms: 400                   # Sustained speech required to trigger; 250–600 ms. Lower = more sensitive.
+  energy_threshold: 1800        # RMS threshold for speech detection; 1000–3000. Raise on noisy lines.
+  cooldown_ms: 1000             # Ignore retriggers for this period after one fires; 500–1500 ms.
+  post_tts_end_protection_ms: 250  # Guard after TTS ends to avoid clipping callers; 250–500 ms.
+
+streaming:
+  sample_rate: 8000
+  jitter_buffer_ms: 100         # 80–150 ms. Higher = more robust to jitter, slightly more latency.
+  keepalive_interval_ms: 5000
+  connection_timeout_ms: 10000
+  fallback_timeout_ms: 8000
+  chunk_size_ms: 20
+  min_start_ms: 300             # 250–400 ms. Warm-up buffer; too low risks underruns.
+  low_watermark_ms: 200         # Pause when buffer dips below this; raise if underruns occur.
+  provider_grace_ms: 500        # Absorb late chunks after cleanup; avoids tail-chop.
+  logging_level: "info"
+
+# VAD: add a `vad:` block if you need utterance segmentation control; see docs/Configuration-Reference.md
+
+# Providers (secrets from .env)
+providers:
+  local:
+    enabled: true
+    # Local AI Server WebSocket URL. Default deployment uses host networking, so 127.0.0.1 is correct.
+    # If you run containers on a user-defined bridge network (no host networking), use ws://local_ai_server:8765.
+    ws_url: "${LOCAL_WS_URL:-ws://127.0.0.1:8765}"
+    # auto|strict|compatible|off (auto follows Local AI Server tool capability probe)
+    tool_call_policy: "${LOCAL_TOOL_CALL_POLICY:-auto}"
+    # Structured tool gateway for full local provider mode.
+    tool_gateway_enabled: "${LOCAL_TOOL_GATEWAY_ENABLED:-true}"
+    connect_timeout_sec: ${LOCAL_WS_CONNECT_TIMEOUT:=2.0}
+    response_timeout_sec: ${LOCAL_WS_RESPONSE_TIMEOUT:=5.0}
+    chunk_ms: ${LOCAL_WS_CHUNK_MS:=320}
+  openai:
+    enabled: true
+    api_key: "${OPENAI_API_KEY}"
+  openai_realtime:
+    enabled: true
+    api_key: "${OPENAI_API_KEY}"
+    api_version: "beta"  # "beta" (default, broader compatibility) or "ga" (no OpenAI-Beta header)
+    model: "gpt-4o-realtime-preview-2024-12-17"  # GA: gpt-realtime / gpt-realtime-mini | Beta: gpt-4o-realtime-preview-*
+    voice: "alloy"
+    base_url: "wss://api.openai.com/v1/realtime"
+  deepgram:
+    enabled: true
+    api_key: "${DEEPGRAM_API_KEY}"
+    model: "nova-2-general"
+    tts_model: "aura-asteria-en"
+  # ElevenLabs TTS - Modular pipeline adapter for STT→LLM→TTS pipelines
+  # Use with pipelines (e.g., local_stt + openai_llm + elevenlabs_tts)
+  # Requires ELEVENLABS_API_KEY in .env
+  elevenlabs_tts:
+    type: elevenlabs
+    enabled: true
+    capabilities:
+      - tts
+    voice_id: "21m00Tcm4TlvDq8ikWAM"   # Rachel (warm, professional)
+    model_id: "eleven_turbo_v2_5"        # Fast, high-quality
+    output_format: "ulaw_8000"           # Telephony-optimized
+    stability: 0.5
+    similarity_boost: 0.75
+    style: 0.0
+    use_speaker_boost: true
+
+# Canonical LLM defaults (used by providers/pipelines unless overridden)
+llm:
+  initial_greeting: "Hello, how can I help you today?"
+  prompt: "You are a concise and helpful voice assistant. Keep replies under 20 words unless asked for detail."
+  model: "gpt-4o"

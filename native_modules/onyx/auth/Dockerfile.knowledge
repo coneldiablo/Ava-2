@@ -1,0 +1,13 @@
+# Build context: repository root. Parent must be the reviewed digest-pinned
+# namespace/auth/http/tokenizer overlay; no model/provider is created here.
+ARG ONYX_AUTH_IMAGE
+FROM ${ONYX_AUTH_IMAGE}
+USER root
+COPY --chown=0:0 native_modules/onyx/auth/knowledge*.py /app/onyx/ava_auth/
+COPY --chown=0:0 native_modules/onyx/install_knowledge_acl.py native_modules/onyx/install_ingestion_search.py /tmp/ava-knowledge/
+RUN python /tmp/ava-knowledge/install_knowledge_acl.py --target /app/onyx/db/document_set.py \
+    && python /tmp/ava-knowledge/install_ingestion_search.py --target /app/onyx/db/connector.py \
+    && python -m compileall -q /app/onyx/ava_auth /app/onyx/db/document_set.py /app/onyx/db/connector.py \
+    && rm -rf /tmp/ava-knowledge
+LABEL ava.upstream.revision="a1b9e02eb65cc114c65381cbef5e555e1753ed0a"
+USER 1001:1001

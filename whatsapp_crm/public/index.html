@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp CRM Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="ri-whatsapp-fill"></i>
+                <span>CRM Bot</span>
+            </div>
+
+            <div class="instance-selector">
+                <label>Текущий бизнес:</label>
+                <select id="instance-select">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="ri-dashboard-line"></i> Дашборд
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i class="ri-settings-4-line"></i> Настройки
+                </a>
+                <a href="#" class="nav-item" data-view="simulator">
+                    <i class="ri-robot-line"></i> Симулятор
+                </a>
+                <a href="#" class="nav-item" data-view="instances-mgr">
+                    <i class="ri-building-4-line"></i> Управление
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- View: Dashboard (Placeholder) -->
+            <section id="view-dashboard" class="view-section active">
+                <header class="section-header">
+                    <h1>Обзор</h1>
+                </header>
+                <div class="card">
+                    <p>Добро пожаловать в панель управления WhatsApp CRM.</p>
+                    <p>Выберите бизнес слева или создайте новый в разделе "Управление".</p>
+                </div>
+            </section>
+
+            <!-- View: Settings (Per Instance) -->
+            <section id="view-settings" class="view-section" style="display: none;">
+                <header class="section-header">
+                    <h1>Настройки Бизнеса</h1>
+                    <button class="btn btn-primary" onclick="saveCurrentInstanceSettings()">Сохранить изменения</button>
+                </header>
+
+                <div class="grid-2">
+                    <!-- Green API -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="ri-whatsapp-line"></i> Подключение (Green API)
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Id Instance</label>
+                                <input type="text" id="ga-instance" placeholder="110182xxxx">
+                            </div>
+                            <div class="form-group">
+                                <label>API Token</label>
+                                <input type="text" id="ga-token" placeholder="a1b2c3d4...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Settings -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="ri-brain-line"></i> Нейросеть (AI)
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>OpenRouter API Key</label>
+                                <input type="text" id="ai-key" placeholder="sk-or-...">
+                            </div>
+                            <div class="form-group">
+                                <label>Модель (Model ID)</label>
+                                <input type="text" id="ai-model" placeholder="yandex/yandexgpt-5-lite">
+                                <small>Например: `yandex/yandexgpt-5-lite` или `google/gemini-pro`</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Prompt -->
+                    <div class="card" style="grid-column: span 2;">
+                        <div class="card-header">
+                            <i class="ri-chat-settings-line"></i> Системный Промпт
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Инструкция для бота</label>
+                                <textarea id="ai-prompt" rows="10"
+                                    placeholder="Ты - менеджер салона красоты..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- YClients -->
+                    <div class="card" style="grid-column: span 2;">
+                        <div class="card-header">
+                            <i class="ri-calendar-check-line"></i> YClients Интеграция
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Прямая ссылка на запись</label>
+                                <input type="text" id="yc-link" placeholder="https://n1234.yclients.com/...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Simulator -->
+            <section id="view-simulator" class="view-section" style="display: none;">
+                <header class="section-header">
+                    <h1>Чат-Симулятор</h1>
+                </header>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message assistant">
+                            Привет! Это тест. Выберите бизнес слева, чтобы тестировать его промпт.
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Введите сообщение...">
+                        <button class="btn btn-primary" onclick="sendMessage()">Отправить</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Instance Manager -->
+            <section id="view-instances-mgr" class="view-section" style="display: none;">
+                <header class="section-header">
+                    <h1>Управление Бизнесами</h1>
+                    <button class="btn btn-primary" onclick="showCreateInstanceModal()">+ Добавить бизнес</button>
+                </header>
+
+                <div class="card">
+                    <table class="data-table" id="instances-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Green API</th>
+                                <th>AI Модель</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Simple Create Form (Inline for now) -->
+                <div id="create-instance-form" class="card"
+                    style="display:none; border: 2px solid var(--primary-color);">
+                    <h3>Новый бизнес</h3>
+                    <div class="form-group">
+                        <label>Название</label>
+                        <input type="text" id="new-inst-name" placeholder="Например: Мой Салон">
+                    </div>
+                    <button class="btn btn-primary" onclick="createInstance()">Создать</button>
+                    <button class="btn"
+                        onclick="document.getElementById('create-instance-form').style.display='none'">Отмена</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,107 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: whats_koord_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redis_data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whats_koord_app
+    restart: unless-stopped
+    init: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      openwa:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DB_PATH=/app/data/crm_v2.db
+      - TESSERACT_LANG_PATH=/app/ocr_data/
+      - NODE_ENV=production
+      - OPENWA_URL=http://openwa:2785
+    volumes:
+      - app_data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:3000/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  openwa:
+    image: asterisk-ai-voice-agent-openwa:${OPENWA_IMAGE_TAG:-0.23.4}
+    pull_policy: build
+    build:
+      context: "${OPENWA_BUILD_CONTEXT:-https://github.com/rmyndharis/OpenWA.git?tag=${OPENWA_GIT_TAG:-v0.23.4}&checksum=1bfebfe57232bcb20ddd0975560d3f4bc994fb36}"
+      dockerfile: Dockerfile
+    container_name: whats_koord_openwa
+    restart: unless-stopped
+    stop_grace_period: 45s
+    ports:
+      - "127.0.0.1:2785:2785"
+    environment:
+      - NODE_ENV=production
+      - HOME=/tmp
+      - XDG_CONFIG_HOME=/tmp/.config
+      - XDG_CACHE_HOME=/tmp/.cache
+      - PORT=2785
+      - API_MASTER_KEY=${OPENWA_API_KEY:?set OPENWA_API_KEY}
+      - AUTO_START_SESSIONS=true
+      - STATUS_SEED_ON_READY=false
+      - BAILEYS_MARK_ONLINE_ON_CONNECT=false
+      - NODE_ID=ava-openwa-primary
+      - SERVE_DASHBOARD=false
+      - ENABLE_SWAGGER=false
+      - CSP_UPGRADE_INSECURE_REQUESTS=false
+      - DATABASE_TYPE=sqlite
+      - SESSION_DATA_PATH=/app/data/sessions
+      - PUPPETEER_EXECUTABLE_PATH=/usr/local/bin/puppeteer-chrome
+      - WWEBJS_WEB_VERSION=off
+      - LOG_LEVEL=${OPENWA_LOG_LEVEL:-info}
+    volumes:
+      - openwa_data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    pids_limit: ${OPENWA_PIDS_LIMIT:-2048}
+    mem_limit: ${OPENWA_MEM_LIMIT:-2g}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:2785/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+volumes:
+  app_data:
+  redis_data:
+  openwa_data:
